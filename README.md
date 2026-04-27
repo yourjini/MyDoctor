@@ -56,12 +56,12 @@ npm run dev
 **선택 (기본값 `yourjini/MyDoctor_db@main` 사용):**
 다른 데이터 레포 쓰고 싶으면 `GITHUB_DATA_OWNER`, `GITHUB_DATA_REPO`, `GITHUB_DATA_BRANCH` 추가 등록.
 
-## Vercel 배포
+## 배포
 
-1. 이 레포(`MyDoctor`)를 Vercel에 import
-2. Settings → Environment Variables 에 위 7개 변수 등록
-3. Deploy
-4. 배포된 URL → 로그인 → 사용
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourjini%2FMyDoctor&env=GITHUB_TOKEN,ANTHROPIC_API_KEY,APP_PASSWORD,AUTH_SECRET&envDescription=4%20required%20env%20vars%20-%20see%20MOBILE_SETUP.md&envLink=https%3A%2F%2Fgithub.com%2Fyourjini%2FMyDoctor%2Fblob%2Fmain%2FMOBILE_SETUP.md)
+
+- **모바일에서 5분 셋업**: [MOBILE_SETUP.md](./MOBILE_SETUP.md)
+- **터미널에서 이어할 때**: [HANDOFF.md](./HANDOFF.md)
 
 > **주의**: 데이터 레포 (`MyDoctor_db`) 는 반드시 **private**으로 두세요. 의료 정보입니다.
 
