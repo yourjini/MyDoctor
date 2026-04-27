@@ -1,0 +1,66 @@
+// Shared data types stored as JSON in the data repo
+
+export type Attachment = {
+  filename: string; // original filename
+  path: string; // path in the data repo (e.g. visits/2026/<id>/receipt.jpg)
+  contentType: string;
+  size: number;
+};
+
+export type HospitalType =
+  | "내과"
+  | "외과"
+  | "산부인과"
+  | "정형외과"
+  | "피부과"
+  | "안과"
+  | "이비인후과"
+  | "치과"
+  | "정신건강의학과"
+  | "한의원"
+  | "기타";
+
+export type Visit = {
+  id: string;
+  kind: "visit";
+  date: string; // YYYY-MM-DD
+  hospitalType: HospitalType | string;
+  hospitalName: string;
+  doctorName?: string;
+  diagnosis: string;
+  details?: string;
+  insuranceClaimed: boolean; // 실비보험 청구 여부
+  attachments: Attachment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Appointment = {
+  id: string;
+  kind: "appointment";
+  datetime: string; // ISO datetime
+  hospitalName: string;
+  hospitalType?: HospitalType | string;
+  doctorName?: string;
+  reason?: string;
+  precautions?: string; // 주의사항
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Checkup = {
+  id: string;
+  kind: "checkup";
+  date: string; // YYYY-MM-DD (year extracted for grouping)
+  title: string; // e.g. "2026 종합건강검진"
+  hospitalName?: string;
+  summary: string; // AI-generated or user-edited summary
+  symptoms?: string; // 증상 / 소견
+  doctorOpinion?: string; // 의사 소견 (사용자 추가)
+  notes?: string; // 추가 메모
+  attachments: Attachment[]; // PDFs, images
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnyRecord = Visit | Appointment | Checkup;
