@@ -44,15 +44,17 @@ npm run dev
 
 ## 환경변수
 
+**필수 (4개):**
+
 | 변수 | 설명 |
 |---|---|
-| `GITHUB_TOKEN` | 데이터 레포에 쓰기 권한이 있는 PAT (`repo` 스코프) |
-| `GITHUB_DATA_OWNER` | 데이터 레포 소유자 (예: `yourjini`) |
-| `GITHUB_DATA_REPO` | 데이터 레포 이름 (예: `MyDoctor_db`) |
-| `GITHUB_DATA_BRANCH` | 사용할 브랜치 (기본: `main`) |
+| `GITHUB_TOKEN` | 데이터 레포에 쓰기 권한이 있는 PAT (Contents: R/W) |
 | `ANTHROPIC_API_KEY` | 검진 결과 자동 추출용 |
 | `APP_PASSWORD` | 로그인 비밀번호 |
-| `AUTH_SECRET` | 세션 쿠키 서명용 (16자 이상) |
+| `AUTH_SECRET` | 세션 쿠키 서명용 (16자 이상 랜덤) |
+
+**선택 (기본값 `yourjini/MyDoctor_db@main` 사용):**
+다른 데이터 레포 쓰고 싶으면 `GITHUB_DATA_OWNER`, `GITHUB_DATA_REPO`, `GITHUB_DATA_BRANCH` 추가 등록.
 
 ## Vercel 배포
 

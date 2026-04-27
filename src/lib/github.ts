@@ -12,12 +12,9 @@ function getOctokit() {
 }
 
 function getRepo() {
-  const owner = process.env.GITHUB_DATA_OWNER;
-  const repo = process.env.GITHUB_DATA_REPO;
+  const owner = process.env.GITHUB_DATA_OWNER || "yourjini";
+  const repo = process.env.GITHUB_DATA_REPO || "MyDoctor_db";
   const branch = process.env.GITHUB_DATA_BRANCH || "main";
-  if (!owner || !repo) {
-    throw new Error("GITHUB_DATA_OWNER / GITHUB_DATA_REPO must be set");
-  }
   return { owner, repo, branch };
 }
 
