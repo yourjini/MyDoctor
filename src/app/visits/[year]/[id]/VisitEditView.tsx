@@ -97,14 +97,12 @@ export function VisitEditView({
             실비보험 청구 완료
           </label>
 
-          {isEditing && (
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                첨부파일 추가
-              </label>
-              <FilePicker name="files" />
-            </div>
-          )}
+          <div className={isEditing ? "" : "hidden"}>
+            <label className="mb-1 block text-sm font-medium">
+              첨부파일 추가
+            </label>
+            <FilePicker name="files" />
+          </div>
         </fieldset>
 
         <div className="flex gap-2 pt-1">

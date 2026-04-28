@@ -100,14 +100,12 @@ export function CheckupEditView({
             />
           </Field>
 
-          {isEditing && (
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                원본 파일 추가
-              </label>
-              <FilePicker name="files" />
-            </div>
-          )}
+          <div className={isEditing ? "" : "hidden"}>
+            <label className="mb-1 block text-sm font-medium">
+              원본 파일 추가
+            </label>
+            <FilePicker name="files" />
+          </div>
         </fieldset>
 
         <div className="flex gap-2 pt-1">
