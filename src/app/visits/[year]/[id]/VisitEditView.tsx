@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { FilePicker } from "@/components/FilePicker";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
@@ -20,7 +20,17 @@ export function VisitEditView({
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
+  useEffect(() => {
+    console.log("[VisitEditView] mounted");
+    return () => console.log("[VisitEditView] unmounted");
+  }, []);
+
+  useEffect(() => {
+    console.log("[VisitEditView] isEditing ->", isEditing);
+  }, [isEditing]);
+
   function cancel() {
+    console.log("[VisitEditView] cancel() called");
     formRef.current?.reset();
     setIsEditing(false);
   }
