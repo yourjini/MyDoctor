@@ -33,7 +33,7 @@ export async function createAppointmentAction(formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/appointments/${appt.datetime.slice(0, 4)}/${appt.id}`);
+  redirect("/appointments");
 }
 
 export async function updateAppointmentAction(formData: FormData) {

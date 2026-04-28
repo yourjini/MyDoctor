@@ -47,7 +47,7 @@ export async function createCheckupAction(formData: FormData) {
     fileBufs,
   );
   revalidatePath("/checkups");
-  redirect(`/checkups/${checkup.date.slice(0, 4)}/${checkup.id}`);
+  redirect("/checkups");
 }
 
 export async function updateCheckupAction(formData: FormData) {
