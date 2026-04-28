@@ -50,7 +50,7 @@ export async function createVisitAction(formData: FormData) {
 
   revalidatePath("/visits");
   revalidatePath("/");
-  redirect(`/visits/${visit.date.slice(0, 4)}/${visit.id}`);
+  redirect("/visits");
 }
 
 export async function updateVisitAction(formData: FormData) {
