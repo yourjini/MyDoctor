@@ -102,7 +102,10 @@ export async function removeVisitAttachmentAction(formData: FormData) {
   const year = String(formData.get("year") || "");
   const path = String(formData.get("path") || "");
   if (!id || !year || !path) throw new Error("id/year/path 누락");
-  if (!path.startsWith("data/visits/")) throw new Error("invalid path");
+  if (!path.startsWith(`data/visits/${year}/${id}-files/`)) {
+    throw new Error("invalid path");
+  }
   await removeVisitAttachment(year, id, path);
   revalidatePath(`/visits/${year}/${id}`);
+  redirect(`/visits/${year}/${id}`);
 }

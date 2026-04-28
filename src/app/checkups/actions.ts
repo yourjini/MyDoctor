@@ -97,7 +97,10 @@ export async function removeCheckupAttachmentAction(formData: FormData) {
   const year = String(formData.get("year") || "");
   const path = String(formData.get("path") || "");
   if (!id || !year || !path) throw new Error("id/year/path 누락");
-  if (!path.startsWith("data/checkups/")) throw new Error("invalid path");
+  if (!path.startsWith(`data/checkups/${year}/${id}-files/`)) {
+    throw new Error("invalid path");
+  }
   await removeCheckupAttachment(year, id, path);
   revalidatePath(`/checkups/${year}/${id}`);
+  redirect(`/checkups/${year}/${id}`);
 }

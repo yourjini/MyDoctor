@@ -57,10 +57,18 @@ export async function createVisit(
   const now = new Date().toISOString();
 
   const attachments: Attachment[] = [];
+  const taken = new Set<string>();
   for (const f of files) {
-    const safeName = sanitizeFilename(f.filename);
+    const safeName = uniqueName(sanitizeFilename(f.filename), taken);
+    taken.add(safeName);
     const path = `${visitAttachDir(year, id)}/${safeName}`;
-    await writeFile(path, f.data, `add visit attachment ${safeName}`);
+    try {
+      await writeFile(path, f.data, `add visit attachment ${safeName}`);
+    } catch (err) {
+      throw new Error(
+        `첨부 파일 업로드 실패 (${f.filename}): ${describeError(err)}`,
+      );
+    }
     attachments.push({
       filename: f.filename,
       path,
@@ -77,7 +85,15 @@ export async function createVisit(
     createdAt: now,
     updatedAt: now,
   };
-  await writeJSON(visitFile(year, id), visit, `add visit ${input.date} ${input.hospitalName}`);
+  try {
+    await writeJSON(
+      visitFile(year, id),
+      visit,
+      `add visit ${input.date} ${input.hospitalName}`,
+    );
+  } catch (err) {
+    throw new Error(`방문 기록 저장 실패: ${describeError(err)}`);
+  }
   return visit;
 }
 
@@ -90,11 +106,19 @@ export async function updateVisit(
   const current = await getVisit(year, id);
   if (!current) return null;
 
+  const taken = new Set(current.attachments.map((a) => basename(a.path)));
   const added: Attachment[] = [];
   for (const f of newFiles) {
-    const safeName = sanitizeFilename(f.filename);
+    const safeName = uniqueName(sanitizeFilename(f.filename), taken);
+    taken.add(safeName);
     const path = `${visitAttachDir(year, id)}/${safeName}`;
-    await writeFile(path, f.data, `add visit attachment ${safeName}`);
+    try {
+      await writeFile(path, f.data, `add visit attachment ${safeName}`);
+    } catch (err) {
+      throw new Error(
+        `첨부 파일 업로드 실패 (${f.filename}): ${describeError(err)}`,
+      );
+    }
     added.push({
       filename: f.filename,
       path,
@@ -111,7 +135,11 @@ export async function updateVisit(
     attachments: [...current.attachments, ...added],
     updatedAt: new Date().toISOString(),
   };
-  await writeJSON(visitFile(year, id), next, `update visit ${id}`);
+  try {
+    await writeJSON(visitFile(year, id), next, `update visit ${id}`);
+  } catch (err) {
+    throw new Error(`방문 기록 수정 실패: ${describeError(err)}`);
+  }
   return next;
 }
 
@@ -132,13 +160,25 @@ export async function removeVisitAttachment(
   const current = await getVisit(year, id);
   if (!current) return;
   if (!current.attachments.some((a) => a.path === path)) return;
-  await deleteFile(path, `remove visit attachment ${path}`);
+  try {
+    await deleteFile(path, `remove visit attachment ${path}`);
+  } catch (err) {
+    throw new Error(`첨부 파일 삭제 실패: ${describeError(err)}`);
+  }
   const next: Visit = {
     ...current,
     attachments: current.attachments.filter((a) => a.path !== path),
     updatedAt: new Date().toISOString(),
   };
-  await writeJSON(visitFile(year, id), next, `update visit ${id} (remove attachment)`);
+  try {
+    await writeJSON(
+      visitFile(year, id),
+      next,
+      `update visit ${id} (remove attachment)`,
+    );
+  } catch (err) {
+    throw new Error(`방문 기록 갱신 실패: ${describeError(err)}`);
+  }
 }
 
 // ============================================================
@@ -221,10 +261,18 @@ export async function createCheckup(
   const now = new Date().toISOString();
 
   const attachments: Attachment[] = [];
+  const taken = new Set<string>();
   for (const f of files) {
-    const safeName = sanitizeFilename(f.filename);
+    const safeName = uniqueName(sanitizeFilename(f.filename), taken);
+    taken.add(safeName);
     const path = `${checkupAttachDir(year, id)}/${safeName}`;
-    await writeFile(path, f.data, `add checkup attachment ${safeName}`);
+    try {
+      await writeFile(path, f.data, `add checkup attachment ${safeName}`);
+    } catch (err) {
+      throw new Error(
+        `검진 파일 업로드 실패 (${f.filename}): ${describeError(err)}`,
+      );
+    }
     attachments.push({
       filename: f.filename,
       path,
@@ -241,7 +289,15 @@ export async function createCheckup(
     createdAt: now,
     updatedAt: now,
   };
-  await writeJSON(checkupFile(year, id), checkup, `add checkup ${input.date} ${input.title}`);
+  try {
+    await writeJSON(
+      checkupFile(year, id),
+      checkup,
+      `add checkup ${input.date} ${input.title}`,
+    );
+  } catch (err) {
+    throw new Error(`검진 기록 저장 실패: ${describeError(err)}`);
+  }
   return checkup;
 }
 
@@ -254,11 +310,19 @@ export async function updateCheckup(
   const current = await getCheckup(year, id);
   if (!current) return null;
 
+  const taken = new Set(current.attachments.map((a) => basename(a.path)));
   const added: Attachment[] = [];
   for (const f of newFiles) {
-    const safeName = sanitizeFilename(f.filename);
+    const safeName = uniqueName(sanitizeFilename(f.filename), taken);
+    taken.add(safeName);
     const path = `${checkupAttachDir(year, id)}/${safeName}`;
-    await writeFile(path, f.data, `add checkup attachment ${safeName}`);
+    try {
+      await writeFile(path, f.data, `add checkup attachment ${safeName}`);
+    } catch (err) {
+      throw new Error(
+        `검진 파일 업로드 실패 (${f.filename}): ${describeError(err)}`,
+      );
+    }
     added.push({
       filename: f.filename,
       path,
@@ -275,7 +339,11 @@ export async function updateCheckup(
     attachments: [...current.attachments, ...added],
     updatedAt: new Date().toISOString(),
   };
-  await writeJSON(checkupFile(year, id), next, `update checkup ${id}`);
+  try {
+    await writeJSON(checkupFile(year, id), next, `update checkup ${id}`);
+  } catch (err) {
+    throw new Error(`검진 기록 수정 실패: ${describeError(err)}`);
+  }
   return next;
 }
 
@@ -295,13 +363,25 @@ export async function removeCheckupAttachment(
   const current = await getCheckup(year, id);
   if (!current) return;
   if (!current.attachments.some((a) => a.path === path)) return;
-  await deleteFile(path, `remove checkup attachment ${path}`);
+  try {
+    await deleteFile(path, `remove checkup attachment ${path}`);
+  } catch (err) {
+    throw new Error(`첨부 파일 삭제 실패: ${describeError(err)}`);
+  }
   const next: Checkup = {
     ...current,
     attachments: current.attachments.filter((a) => a.path !== path),
     updatedAt: new Date().toISOString(),
   };
-  await writeJSON(checkupFile(year, id), next, `update checkup ${id} (remove attachment)`);
+  try {
+    await writeJSON(
+      checkupFile(year, id),
+      next,
+      `update checkup ${id} (remove attachment)`,
+    );
+  } catch (err) {
+    throw new Error(`검진 기록 갱신 실패: ${describeError(err)}`);
+  }
 }
 
 // ============================================================
@@ -312,4 +392,30 @@ function sanitizeFilename(name: string): string {
   // Keep extension; replace anything weird with underscore. Allow Korean chars.
   const cleaned = name.replace(/[\\/:*?"<>|\s]+/g, "_");
   return cleaned.slice(0, 120);
+}
+
+function uniqueName(base: string, taken: Set<string>): string {
+  if (!taken.has(base)) return base;
+  const dot = base.lastIndexOf(".");
+  const stem = dot > 0 ? base.slice(0, dot) : base;
+  const ext = dot > 0 ? base.slice(dot) : "";
+  for (let i = 1; i < 1000; i++) {
+    const candidate = `${stem}_${i}${ext}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${stem}_${Date.now()}${ext}`;
+}
+
+function basename(p: string): string {
+  const slash = p.lastIndexOf("/");
+  return slash >= 0 ? p.slice(slash + 1) : p;
+}
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
 }

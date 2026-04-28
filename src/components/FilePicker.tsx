@@ -22,6 +22,8 @@ export function FilePicker({
   const [previews, setPreviews] = useState<Map<File, string>>(new Map());
   const hiddenRef = useRef<HTMLInputElement>(null);
   const visibleRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<File[]>([]);
+  filesRef.current = files;
 
   useEffect(() => {
     const next = new Map<File, string>();
@@ -41,12 +43,26 @@ export function FilePicker({
     };
   }, [files]);
 
-  useEffect(() => {
-    if (!hiddenRef.current) return;
+  function syncHiddenInput() {
+    const input = hiddenRef.current;
+    if (!input) return;
     const dt = new DataTransfer();
-    for (const f of files) dt.items.add(f);
-    hiddenRef.current.files = dt.files;
+    for (const f of filesRef.current) dt.items.add(f);
+    input.files = dt.files;
+  }
+
+  useEffect(() => {
+    syncHiddenInput();
   }, [files]);
+
+  useEffect(() => {
+    const input = hiddenRef.current;
+    const form = input?.form;
+    if (!form) return;
+    const handler = () => syncHiddenInput();
+    form.addEventListener("submit", handler, true);
+    return () => form.removeEventListener("submit", handler, true);
+  }, []);
 
   useEffect(() => {
     onChange?.(files);
