@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { FilePicker } from "@/components/FilePicker";
 import { createCheckupAction } from "../actions";
 
 type Extracted = {
@@ -19,6 +20,11 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
   const [extracted, setExtracted] = useState<Extracted | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const handleFiles = useCallback((next: File[]) => {
+    setFiles(next);
+    setExtracted(null);
+  }, []);
 
   async function handleExtract() {
     if (files.length === 0) {
@@ -58,17 +64,7 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <label className="mb-1 block text-sm font-medium">
           검진 결과 파일 (PDF / 이미지)
         </label>
-        <input
-          type="file"
-          name="files"
-          multiple
-          accept="image/*,application/pdf"
-          onChange={(e) => {
-            setFiles(Array.from(e.target.files ?? []));
-            setExtracted(null);
-          }}
-          className="block text-sm"
-        />
+        <FilePicker name="files" onChange={handleFiles} />
         <p className="mt-1 text-xs text-muted-foreground">
           여러 페이지 결과지면 모두 선택하세요. 업로드한 원본 파일은 검진
           기록과 함께 저장됩니다.

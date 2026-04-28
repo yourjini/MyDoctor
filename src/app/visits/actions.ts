@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   createVisit,
   deleteVisit,
+  removeVisitAttachment,
   updateVisit,
 } from "@/lib/store";
 import type { Visit } from "@/lib/types";
@@ -81,4 +82,14 @@ export async function deleteVisitAction(formData: FormData) {
   revalidatePath("/visits");
   revalidatePath("/");
   redirect("/visits");
+}
+
+export async function removeVisitAttachmentAction(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const year = String(formData.get("year") || "");
+  const path = String(formData.get("path") || "");
+  if (!id || !year || !path) throw new Error("id/year/path 누락");
+  if (!path.startsWith("data/visits/")) throw new Error("invalid path");
+  await removeVisitAttachment(year, id, path);
+  revalidatePath(`/visits/${year}/${id}`);
 }

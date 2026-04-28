@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/PageShell";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { FilePicker } from "@/components/FilePicker";
 import { createVisitAction } from "../actions";
 
 export default async function NewVisitPage({
@@ -66,13 +67,7 @@ export default async function NewVisitPage({
         </Field>
 
         <Field label="첨부파일 (영수증, 처방전 등)">
-          <input
-            type="file"
-            name="files"
-            multiple
-            accept="image/*,application/pdf"
-            className="block text-sm"
-          />
+          <FilePicker name="files" />
         </Field>
 
         <label className="flex items-center gap-2 text-sm">

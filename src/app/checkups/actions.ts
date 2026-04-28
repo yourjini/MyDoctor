@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   createCheckup,
   deleteCheckup,
+  removeCheckupAttachment,
   updateCheckup,
 } from "@/lib/store";
 import type { Checkup } from "@/lib/types";
@@ -76,4 +77,14 @@ export async function deleteCheckupAction(formData: FormData) {
   await deleteCheckup(year, id);
   revalidatePath("/checkups");
   redirect("/checkups");
+}
+
+export async function removeCheckupAttachmentAction(formData: FormData) {
+  const id = String(formData.get("id") || "");
+  const year = String(formData.get("year") || "");
+  const path = String(formData.get("path") || "");
+  if (!id || !year || !path) throw new Error("id/year/path 누락");
+  if (!path.startsWith("data/checkups/")) throw new Error("invalid path");
+  await removeCheckupAttachment(year, id, path);
+  revalidatePath(`/checkups/${year}/${id}`);
 }

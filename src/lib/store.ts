@@ -108,6 +108,23 @@ export async function deleteVisit(year: string, id: string): Promise<void> {
   await deleteFile(visitFile(year, id), `delete visit ${id}`);
 }
 
+export async function removeVisitAttachment(
+  year: string,
+  id: string,
+  path: string,
+): Promise<void> {
+  const current = await getVisit(year, id);
+  if (!current) return;
+  if (!current.attachments.some((a) => a.path === path)) return;
+  await deleteFile(path, `remove visit attachment ${path}`);
+  const next: Visit = {
+    ...current,
+    attachments: current.attachments.filter((a) => a.path !== path),
+    updatedAt: new Date().toISOString(),
+  };
+  await writeJSON(visitFile(year, id), next, `update visit ${id} (remove attachment)`);
+}
+
 // ============================================================
 // Appointments
 // ============================================================
@@ -236,6 +253,23 @@ export async function deleteCheckup(year: string, id: string): Promise<void> {
     if (a.type === "file") await deleteFile(a.path, `delete checkup attachment ${id}`);
   }
   await deleteFile(checkupFile(year, id), `delete checkup ${id}`);
+}
+
+export async function removeCheckupAttachment(
+  year: string,
+  id: string,
+  path: string,
+): Promise<void> {
+  const current = await getCheckup(year, id);
+  if (!current) return;
+  if (!current.attachments.some((a) => a.path === path)) return;
+  await deleteFile(path, `remove checkup attachment ${path}`);
+  const next: Checkup = {
+    ...current,
+    attachments: current.attachments.filter((a) => a.path !== path),
+    updatedAt: new Date().toISOString(),
+  };
+  await writeJSON(checkupFile(year, id), next, `update checkup ${id} (remove attachment)`);
 }
 
 // ============================================================
