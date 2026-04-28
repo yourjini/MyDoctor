@@ -85,14 +85,30 @@ export async function updateVisit(
   year: string,
   id: string,
   patch: Partial<Visit>,
+  newFiles: { filename: string; contentType: string; data: Buffer }[] = [],
 ): Promise<Visit | null> {
   const current = await getVisit(year, id);
   if (!current) return null;
+
+  const added: Attachment[] = [];
+  for (const f of newFiles) {
+    const safeName = sanitizeFilename(f.filename);
+    const path = `${visitAttachDir(year, id)}/${safeName}`;
+    await writeFile(path, f.data, `add visit attachment ${safeName}`);
+    added.push({
+      filename: f.filename,
+      path,
+      contentType: f.contentType,
+      size: f.data.length,
+    });
+  }
+
   const next: Visit = {
     ...current,
     ...patch,
     id: current.id,
     kind: "visit",
+    attachments: [...current.attachments, ...added],
     updatedAt: new Date().toISOString(),
   };
   await writeJSON(visitFile(year, id), next, `update visit ${id}`);
@@ -233,14 +249,30 @@ export async function updateCheckup(
   year: string,
   id: string,
   patch: Partial<Checkup>,
+  newFiles: { filename: string; contentType: string; data: Buffer }[] = [],
 ): Promise<Checkup | null> {
   const current = await getCheckup(year, id);
   if (!current) return null;
+
+  const added: Attachment[] = [];
+  for (const f of newFiles) {
+    const safeName = sanitizeFilename(f.filename);
+    const path = `${checkupAttachDir(year, id)}/${safeName}`;
+    await writeFile(path, f.data, `add checkup attachment ${safeName}`);
+    added.push({
+      filename: f.filename,
+      path,
+      contentType: f.contentType,
+      size: f.data.length,
+    });
+  }
+
   const next: Checkup = {
     ...current,
     ...patch,
     id: current.id,
     kind: "checkup",
+    attachments: [...current.attachments, ...added],
     updatedAt: new Date().toISOString(),
   };
   await writeJSON(checkupFile(year, id), next, `update checkup ${id}`);

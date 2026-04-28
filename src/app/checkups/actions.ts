@@ -64,7 +64,20 @@ export async function updateCheckupAction(formData: FormData) {
       String(formData.get("doctorOpinion") || "").trim() || undefined,
     notes: String(formData.get("notes") || "").trim() || undefined,
   };
-  await updateCheckup(year, id, patch);
+
+  const files = formData.getAll("files") as File[];
+  const fileBufs: { filename: string; contentType: string; data: Buffer }[] = [];
+  for (const f of files) {
+    if (!(f instanceof File) || f.size === 0) continue;
+    const buf = Buffer.from(await f.arrayBuffer());
+    fileBufs.push({
+      filename: f.name,
+      contentType: f.type || "application/octet-stream",
+      data: buf,
+    });
+  }
+
+  await updateCheckup(year, id, patch, fileBufs);
   revalidatePath(`/checkups/${year}/${id}`);
   revalidatePath("/checkups");
   redirect(`/checkups/${year}/${id}`);

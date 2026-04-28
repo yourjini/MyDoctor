@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { FilePicker } from "@/components/FilePicker";
 import {
   removeCheckupAttachmentAction,
   updateCheckupAction,
@@ -27,6 +28,7 @@ export function CheckupEditView({
       <form
         ref={formRef}
         action={updateCheckupAction}
+        encType="multipart/form-data"
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
         <input type="hidden" name="id" value={checkup.id} />
@@ -96,6 +98,15 @@ export function CheckupEditView({
               className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
             />
           </Field>
+
+          {isEditing && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                원본 파일 추가
+              </label>
+              <FilePicker name="files" />
+            </div>
+          )}
         </fieldset>
 
         <div className="flex gap-2 pt-1">

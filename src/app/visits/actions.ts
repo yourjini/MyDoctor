@@ -67,7 +67,20 @@ export async function updateVisitAction(formData: FormData) {
     details: String(formData.get("details") || "").trim() || undefined,
     insuranceClaimed: formData.get("insuranceClaimed") === "on",
   };
-  await updateVisit(year, id, patch);
+
+  const files = formData.getAll("files") as File[];
+  const fileBufs: { filename: string; contentType: string; data: Buffer }[] = [];
+  for (const f of files) {
+    if (!(f instanceof File) || f.size === 0) continue;
+    const buf = Buffer.from(await f.arrayBuffer());
+    fileBufs.push({
+      filename: f.name,
+      contentType: f.type || "application/octet-stream",
+      data: buf,
+    });
+  }
+
+  await updateVisit(year, id, patch, fileBufs);
   revalidatePath(`/visits/${year}/${id}`);
   revalidatePath("/visits");
   revalidatePath("/");

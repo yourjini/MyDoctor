@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { FilePicker } from "@/components/FilePicker";
 import {
   removeVisitAttachmentAction,
   updateVisitAction,
@@ -28,6 +29,7 @@ export function VisitEditView({
       <form
         ref={formRef}
         action={updateVisitAction}
+        encType="multipart/form-data"
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
         <input type="hidden" name="id" value={visit.id} />
@@ -93,6 +95,15 @@ export function VisitEditView({
             />
             실비보험 청구 완료
           </label>
+
+          {isEditing && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                첨부파일 추가
+              </label>
+              <FilePicker name="files" />
+            </div>
+          )}
         </fieldset>
 
         <div className="flex gap-2 pt-1">
