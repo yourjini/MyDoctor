@@ -2,20 +2,26 @@ import { PageShell } from "@/components/PageShell";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { createAppointmentAction } from "../actions";
 
-export default function NewAppointmentPage() {
+export default async function NewAppointmentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date: queryDate } = await searchParams;
   const today = new Date().toISOString().slice(0, 10);
+  const initialDate = isValidDate(queryDate) ? queryDate! : today;
   return (
     <PageShell title="새 예약">
       <form
         action={createAppointmentAction}
-        className="space-y-4 rounded-lg border bg-card p-5"
+        className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="날짜" required>
             <input
               type="date"
               name="date"
-              defaultValue={today}
+              defaultValue={initialDate}
               required
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
@@ -31,7 +37,7 @@ export default function NewAppointmentPage() {
           </Field>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형">
             <HospitalTypeSelect />
           </Field>
@@ -77,6 +83,10 @@ export default function NewAppointmentPage() {
       </form>
     </PageShell>
   );
+}
+
+function isValidDate(s?: string): boolean {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
 function Field({

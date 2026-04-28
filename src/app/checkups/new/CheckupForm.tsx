@@ -12,8 +12,8 @@ type Extracted = {
   doctorOpinion: string;
 };
 
-export function CheckupForm() {
-  const today = new Date().toISOString().slice(0, 10);
+export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
+  const today = initialDate ?? new Date().toISOString().slice(0, 10);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extracted, setExtracted] = useState<Extracted | null>(null);
@@ -52,7 +52,7 @@ export function CheckupForm() {
       ref={formRef}
       action={createCheckupAction}
       encType="multipart/form-data"
-      className="space-y-4 rounded-lg border bg-card p-5"
+      className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
     >
       <div>
         <label className="mb-1 block text-sm font-medium">
@@ -102,7 +102,7 @@ export function CheckupForm() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="검진일" required>
           <input
             type="date"

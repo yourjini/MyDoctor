@@ -21,7 +21,7 @@ export default async function VisitDetail({
     <PageShell title="방문 상세" action={<Link href="/visits" className="text-sm text-muted-foreground hover:underline">← 목록</Link>}>
       <form
         action={updateVisitAction}
-        className="space-y-4 rounded-lg border bg-card p-5"
+        className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
         <input type="hidden" name="id" value={visit.id} />
         <input type="hidden" name="year" value={year} />
@@ -36,7 +36,7 @@ export default async function VisitDetail({
           />
         </Field>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형">
             <HospitalTypeSelect defaultValue={visit.hospitalType} />
           </Field>
@@ -97,7 +97,7 @@ export default async function VisitDetail({
       </form>
 
       {visit.attachments.length > 0 && (
-        <section className="mt-6 rounded-lg border bg-card p-5">
+        <section className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
           <h3 className="mb-3 text-sm font-medium">첨부파일</h3>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {visit.attachments.map((a) => (
@@ -127,7 +127,7 @@ export default async function VisitDetail({
         </section>
       )}
 
-      <div className="mt-6 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">
         <div>
           기록 생성: {formatDate(visit.createdAt, true)}
           {visit.updatedAt !== visit.createdAt && (

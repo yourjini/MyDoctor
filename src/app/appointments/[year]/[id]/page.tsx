@@ -24,11 +24,11 @@ export default async function AppointmentDetail({
 
   return (
     <PageShell title="예약 상세" action={<Link href="/appointments" className="text-sm text-muted-foreground hover:underline">← 목록</Link>}>
-      <form action={updateAppointmentAction} className="space-y-4 rounded-lg border bg-card p-5">
+      <form action={updateAppointmentAction} className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
         <input type="hidden" name="id" value={appt.id} />
         <input type="hidden" name="year" value={year} />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="날짜">
             <input type="date" name="date" defaultValue={date} required className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
           </Field>
@@ -37,7 +37,7 @@ export default async function AppointmentDetail({
           </Field>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형">
             <HospitalTypeSelect defaultValue={appt.hospitalType} />
           </Field>

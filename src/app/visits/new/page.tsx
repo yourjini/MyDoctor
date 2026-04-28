@@ -2,26 +2,32 @@ import { PageShell } from "@/components/PageShell";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { createVisitAction } from "../actions";
 
-export default function NewVisitPage() {
+export default async function NewVisitPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date: queryDate } = await searchParams;
   const today = new Date().toISOString().slice(0, 10);
+  const initialDate = isValidDate(queryDate) ? queryDate! : today;
   return (
     <PageShell title="새 방문 기록">
       <form
         action={createVisitAction}
         encType="multipart/form-data"
-        className="space-y-4 rounded-lg border bg-card p-5"
+        className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
         <Field label="방문일" required>
           <input
             type="date"
             name="date"
-            defaultValue={today}
+            defaultValue={initialDate}
             required
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형" required>
             <HospitalTypeSelect />
           </Field>
@@ -85,6 +91,10 @@ export default function NewVisitPage() {
       </form>
     </PageShell>
   );
+}
+
+function isValidDate(s?: string): boolean {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
 function Field({

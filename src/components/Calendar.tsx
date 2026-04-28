@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { DayModal } from "./DayModal";
 
 export type CalendarEvent = {
   id: string;
@@ -19,6 +19,7 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
   const [cursor, setCursor] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -36,101 +37,116 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
   const todayKey = ymd(today);
 
   return (
-    <div className="rounded-lg border bg-card">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <button
-          onClick={() => setCursor(addMonths(cursor, -1))}
-          className="rounded p-1.5 hover:bg-accent"
-          aria-label="이전 달"
-        >
-          ‹
-        </button>
-        <div className="font-medium">{monthLabel}</div>
-        <button
-          onClick={() => setCursor(addMonths(cursor, 1))}
-          className="rounded p-1.5 hover:bg-accent"
-          aria-label="다음 달"
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 border-b text-center text-xs text-muted-foreground">
-        {WEEKDAYS.map((w, i) => (
-          <div
-            key={w}
-            className={cn(
-              "py-2",
-              i === 0 && "text-red-500",
-              i === 6 && "text-blue-500",
-            )}
+    <>
+      <div className="rounded-lg border bg-card">
+        <div className="flex items-center justify-between border-b px-3 py-2 sm:px-4 sm:py-3">
+          <button
+            onClick={() => setCursor(addMonths(cursor, -1))}
+            className="rounded p-1.5 hover:bg-accent"
+            aria-label="이전 달"
           >
-            {w}
-          </div>
-        ))}
-      </div>
+            ‹
+          </button>
+          <div className="font-medium text-sm sm:text-base">{monthLabel}</div>
+          <button
+            onClick={() => setCursor(addMonths(cursor, 1))}
+            className="rounded p-1.5 hover:bg-accent"
+            aria-label="다음 달"
+          >
+            ›
+          </button>
+        </div>
 
-      <div className="grid grid-cols-7">
-        {grid.map((day, idx) => {
-          const key = ymd(day);
-          const inMonth = day.getMonth() === cursor.getMonth();
-          const isToday = key === todayKey;
-          const dayEvents = eventsByDate.get(key) ?? [];
-          return (
+        <div className="grid grid-cols-7 border-b text-center text-[10px] text-muted-foreground sm:text-xs">
+          {WEEKDAYS.map((w, i) => (
             <div
-              key={idx}
+              key={w}
               className={cn(
-                "min-h-[80px] border-b border-r p-1 text-xs",
-                idx % 7 === 6 && "border-r-0",
-                !inMonth && "bg-muted/30 text-muted-foreground",
+                "py-1.5 sm:py-2",
+                i === 0 && "text-red-500",
+                i === 6 && "text-blue-500",
               )}
             >
-              <div
+              {w}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7">
+          {grid.map((day, idx) => {
+            const key = ymd(day);
+            const inMonth = day.getMonth() === cursor.getMonth();
+            const isToday = key === todayKey;
+            const dayEvents = eventsByDate.get(key) ?? [];
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedDate(key)}
                 className={cn(
-                  "mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px]",
-                  isToday && "bg-primary text-primary-foreground font-medium",
+                  "group min-h-[56px] border-b border-r p-1 text-left text-[11px] transition-colors hover:bg-accent/40 focus:bg-accent/60 focus:outline-none sm:min-h-[80px] sm:p-1.5 sm:text-xs",
+                  idx % 7 === 6 && "border-r-0",
+                  !inMonth && "bg-muted/30 text-muted-foreground",
                 )}
               >
-                {day.getDate()}
-              </div>
-              <div className="space-y-0.5">
-                {dayEvents.slice(0, 3).map((e) => (
-                  <Link
-                    key={e.id}
-                    href={e.href}
-                    className={cn(
-                      "block truncate rounded px-1 py-0.5 text-[11px] leading-tight",
-                      e.type === "visit"
-                        ? "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-                        : "bg-amber-100 text-amber-900 hover:bg-amber-200",
-                    )}
-                    title={e.title}
-                  >
-                    {e.title}
-                  </Link>
-                ))}
-                {dayEvents.length > 3 && (
-                  <div className="text-[10px] text-muted-foreground">
-                    +{dayEvents.length - 3}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                <div
+                  className={cn(
+                    "mb-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] sm:mb-1",
+                    isToday &&
+                      "bg-primary text-primary-foreground font-medium",
+                  )}
+                >
+                  {day.getDate()}
+                </div>
+                <div className="space-y-0.5">
+                  {dayEvents.slice(0, 2).map((e) => (
+                    <div
+                      key={e.id}
+                      className={cn(
+                        "truncate rounded px-1 py-0.5 text-[10px] leading-tight sm:text-[11px]",
+                        e.type === "visit"
+                          ? "bg-emerald-100 text-emerald-900"
+                          : "bg-amber-100 text-amber-900",
+                      )}
+                      title={e.title}
+                    >
+                      {e.title}
+                    </div>
+                  ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground">
+                      +{dayEvents.length - 2}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground sm:px-4 sm:text-xs">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            방문이력
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            예약
+          </span>
+          <span className="ml-auto hidden text-muted-foreground/70 sm:inline">
+            날짜를 탭하면 추가/수정 메뉴가 열립니다
+          </span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 border-t px-4 py-2 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          방문이력
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-amber-400" />
-          예약
-        </span>
-      </div>
-    </div>
+      {selectedDate && (
+        <DayModal
+          date={selectedDate}
+          events={eventsByDate.get(selectedDate) ?? []}
+          onClose={() => setSelectedDate(null)}
+        />
+      )}
+    </>
   );
 }
 

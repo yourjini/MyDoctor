@@ -18,11 +18,11 @@ export default async function CheckupDetail({
 
   return (
     <PageShell title="건강검진 상세" action={<Link href="/checkups" className="text-sm text-muted-foreground hover:underline">← 목록</Link>}>
-      <form action={updateCheckupAction} className="space-y-4 rounded-lg border bg-card p-5">
+      <form action={updateCheckupAction} className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
         <input type="hidden" name="id" value={c.id} />
         <input type="hidden" name="year" value={year} />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="검진일">
             <input
               type="date"
@@ -95,7 +95,7 @@ export default async function CheckupDetail({
       </form>
 
       {c.attachments.length > 0 && (
-        <section className="mt-6 rounded-lg border bg-card p-5">
+        <section className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
           <h3 className="mb-3 text-sm font-medium">원본 파일</h3>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {c.attachments.map((a) => (
@@ -125,7 +125,7 @@ export default async function CheckupDetail({
         </section>
       )}
 
-      <div className="mt-6 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">
         <div>
           기록 생성: {formatDate(c.createdAt, true)}
           {c.updatedAt !== c.createdAt && (

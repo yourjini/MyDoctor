@@ -37,7 +37,7 @@ export default async function HomePage() {
     <PageShell title="캘린더">
       <Calendar events={events} />
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-lg border bg-card p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-medium">다가오는 예약</h2>
