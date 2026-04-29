@@ -21,13 +21,34 @@ export function VisitEditView({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    console.log("[VisitEditView] mounted");
-    return () => console.log("[VisitEditView] unmounted");
+    console.log("[VisitEditView] mounted at", location.href);
+    const onPop = () => console.log("[VisitEditView] popstate", location.href);
+    const onBefore = () => console.log("[VisitEditView] beforeunload");
+    const onPageHide = () => console.log("[VisitEditView] pagehide");
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("beforeunload", onBefore);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      console.log("[VisitEditView] unmounted at", location.href);
+      console.trace("[VisitEditView] unmount stack");
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("beforeunload", onBefore);
+      window.removeEventListener("pagehide", onPageHide);
+    };
   }, []);
 
   useEffect(() => {
     console.log("[VisitEditView] isEditing ->", isEditing);
   }, [isEditing]);
+
+  function onEditClick(e: React.MouseEvent<HTMLButtonElement>) {
+    console.log("[VisitEditView] edit click", {
+      defaultPrevented: e.defaultPrevented,
+      target: (e.target as HTMLElement).tagName,
+      currentTarget: (e.currentTarget as HTMLElement).tagName,
+    });
+    setIsEditing(true);
+  }
 
   function cancel() {
     console.log("[VisitEditView] cancel() called");
@@ -135,7 +156,7 @@ export function VisitEditView({
           ) : (
             <button
               type="button"
-              onClick={() => setIsEditing(true)}
+              onClick={onEditClick}
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
               수정하기
