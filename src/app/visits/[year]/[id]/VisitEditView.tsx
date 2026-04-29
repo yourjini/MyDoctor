@@ -136,34 +136,32 @@ export function VisitEditView({
           </div>
         </fieldset>
 
-        <div className="flex gap-2 pt-1">
-          {isEditing ? (
-            <>
-              <button
-                type="submit"
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                저장
-              </button>
-              <button
-                type="button"
-                onClick={cancel}
-                className="rounded-md border bg-background px-4 py-2 text-sm hover:bg-accent"
-              >
-                취소
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={onEditClick}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-            >
-              수정하기
-            </button>
-          )}
+        <div className={isEditing ? "flex gap-2 pt-1" : "hidden"}>
+          <button
+            type="submit"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            저장
+          </button>
+          <button
+            type="button"
+            onClick={cancel}
+            className="rounded-md border bg-background px-4 py-2 text-sm hover:bg-accent"
+          >
+            취소
+          </button>
         </div>
       </form>
+
+      <div className={isEditing ? "hidden" : "pt-3"}>
+        <button
+          type="button"
+          onClick={onEditClick}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          수정하기
+        </button>
+      </div>
 
       {visit.attachments.length > 0 && (
         <section className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
@@ -190,17 +188,19 @@ export function VisitEditView({
                   )}
                   <div className="mt-1 truncate text-xs">{a.filename}</div>
                 </a>
-                {isEditing && (
-                  <form
-                    action={removeVisitAttachmentAction}
-                    className="absolute -right-1.5 -top-1.5"
-                  >
-                    <input type="hidden" name="id" value={visit.id} />
-                    <input type="hidden" name="year" value={year} />
-                    <input type="hidden" name="path" value={a.path} />
-                    <AttachmentDeleteButton filename={a.filename} />
-                  </form>
-                )}
+                <form
+                  action={removeVisitAttachmentAction}
+                  className={
+                    isEditing
+                      ? "absolute -right-1.5 -top-1.5"
+                      : "hidden"
+                  }
+                >
+                  <input type="hidden" name="id" value={visit.id} />
+                  <input type="hidden" name="year" value={year} />
+                  <input type="hidden" name="path" value={a.path} />
+                  <AttachmentDeleteButton filename={a.filename} />
+                </form>
               </li>
             ))}
           </ul>
