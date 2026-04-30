@@ -1,12 +1,36 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { Calendar, type CalendarEvent } from "@/components/Calendar";
+import { KindChip } from "@/components/KindChip";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { SubjectFilter } from "@/components/SubjectFilter";
 import { listAppointments, listVisits } from "@/lib/store";
 import { asPerson, matchesFilter } from "@/lib/people";
+import { todayKST } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+
+type UpcomingItem =
+  | {
+      kind: "appointment";
+      id: string;
+      sortKey: string;
+      datetime: string;
+      hospitalName: string;
+      reason?: string;
+      subject?: string;
+      href: string;
+    }
+  | {
+      kind: "visit";
+      id: string;
+      sortKey: string;
+      date: string;
+      hospitalName: string;
+      diagnosis: string;
+      subject?: string;
+      href: string;
+    };
 
 export default async function HomePage({
   searchParams,
@@ -42,10 +66,43 @@ export default async function HomePage({
     })),
   ];
 
-  const upcoming = appts
-    .filter((a) => new Date(a.datetime) >= new Date())
+  // Split visits by today's KST date so future-dated visits don't masquerade
+  // as recent ones. Pre-created future visits get surfaced in the upcoming
+  // list alongside appointments instead.
+  const todayKey = todayKST().key;
+  const futureVisits = visits.filter((v) => v.date >= todayKey);
+  const pastVisits = visits.filter((v) => v.date < todayKey);
+
+  const futureAppts = appts.filter(
+    (a) => a.datetime.slice(0, 10) >= todayKey,
+  );
+
+  const upcoming: UpcomingItem[] = [
+    ...futureAppts.map((a) => ({
+      kind: "appointment" as const,
+      id: a.id,
+      sortKey: a.datetime,
+      datetime: a.datetime,
+      hospitalName: a.hospitalName,
+      reason: a.reason,
+      subject: a.subject,
+      href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
+    })),
+    ...futureVisits.map((v) => ({
+      kind: "visit" as const,
+      id: v.id,
+      sortKey: v.date,
+      date: v.date,
+      hospitalName: v.hospitalName,
+      diagnosis: v.diagnosis,
+      subject: v.subject,
+      href: `/visits/${v.date.slice(0, 4)}/${v.id}`,
+    })),
+  ]
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
     .slice(0, 5);
-  const recentVisits = visits.slice(0, 5);
+
+  const recentVisits = pastVisits.slice(0, 5);
 
   return (
     <PageShell title="캘린더">
@@ -58,7 +115,7 @@ export default async function HomePage({
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <section className="rounded-lg border bg-card p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-medium">다가오는 예약</h2>
+            <h2 className="font-medium">다가오는 일정</h2>
             <Link
               href="/appointments/new"
               className="text-xs text-primary hover:underline"
@@ -68,25 +125,34 @@ export default async function HomePage({
           </div>
           {upcoming.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">
-              예약된 일정이 없습니다.
+              예정된 일정이 없습니다.
             </p>
           ) : (
             <ul className="space-y-2">
-              {upcoming.map((a) => (
-                <li key={a.id}>
+              {upcoming.map((item) => (
+                <li key={`${item.kind}-${item.id}`}>
                   <Link
-                    href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
+                    href={item.href}
                     className="flex items-center gap-3 rounded p-2 text-sm hover:bg-accent"
                   >
-                    <SubjectBadge subject={a.subject} size="sm" />
+                    <SubjectBadge subject={item.subject} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium truncate">{a.hospitalName}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {a.reason}
+                      <div className="flex items-center gap-1.5">
+                        <KindChip kind={item.kind} size="sm" />
+                        <span className="truncate font-medium">
+                          {item.hospitalName}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted-foreground truncate">
+                        {item.kind === "appointment"
+                          ? item.reason
+                          : item.diagnosis}
                       </div>
                     </div>
                     <div className="shrink-0 text-xs text-muted-foreground">
-                      {formatKDateTime(a.datetime)}
+                      {item.kind === "appointment"
+                        ? formatKDateTime(item.datetime)
+                        : formatKDate(item.date)}
                     </div>
                   </Link>
                 </li>
@@ -145,4 +211,9 @@ function formatKDateTime(iso: string): string {
   const hh = String(d.getHours()).padStart(2, "0");
   const min = String(d.getMinutes()).padStart(2, "0");
   return `${m}/${day} ${hh}:${min}`;
+}
+
+function formatKDate(ymd: string): string {
+  const [, m, d] = ymd.split("-");
+  return `${Number(m)}/${Number(d)}`;
 }
