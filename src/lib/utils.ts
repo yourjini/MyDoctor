@@ -16,3 +16,14 @@ export function formatDate(date: string | Date, withTime = false) {
   const min = String(d.getMinutes()).padStart(2, "0");
   return `${base} ${hh}:${min}`;
 }
+
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+export function todayKST(): { year: number; month0: number; day: number; key: string } {
+  const kst = new Date(Date.now() + KST_OFFSET_MS);
+  const year = kst.getUTCFullYear();
+  const month0 = kst.getUTCMonth();
+  const day = kst.getUTCDate();
+  const key = `${year}-${String(month0 + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return { year, month0, day, key };
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, todayKST } from "@/lib/utils";
 import { DayModal } from "./DayModal";
 
 export type CalendarEvent = {
@@ -15,9 +15,9 @@ export type CalendarEvent = {
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function Calendar({ events }: { events: CalendarEvent[] }) {
-  const today = new Date();
+  const today = todayKST();
   const [cursor, setCursor] = useState(
-    new Date(today.getFullYear(), today.getMonth(), 1),
+    new Date(today.year, today.month0, 1),
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
   const grid = useMemo(() => buildMonthGrid(cursor), [cursor]);
 
   const monthLabel = `${cursor.getFullYear()}년 ${cursor.getMonth() + 1}월`;
-  const todayKey = ymd(today);
+  const todayKey = today.key;
 
   return (
     <>

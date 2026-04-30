@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { FilePicker } from "@/components/FilePicker";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
@@ -20,38 +20,7 @@ export function VisitEditView({
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    console.log("[VisitEditView] mounted at", location.href);
-    const onPop = () => console.log("[VisitEditView] popstate", location.href);
-    const onBefore = () => console.log("[VisitEditView] beforeunload");
-    const onPageHide = () => console.log("[VisitEditView] pagehide");
-    window.addEventListener("popstate", onPop);
-    window.addEventListener("beforeunload", onBefore);
-    window.addEventListener("pagehide", onPageHide);
-    return () => {
-      console.log("[VisitEditView] unmounted at", location.href);
-      console.trace("[VisitEditView] unmount stack");
-      window.removeEventListener("popstate", onPop);
-      window.removeEventListener("beforeunload", onBefore);
-      window.removeEventListener("pagehide", onPageHide);
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log("[VisitEditView] isEditing ->", isEditing);
-  }, [isEditing]);
-
-  function onEditClick(e: React.MouseEvent<HTMLButtonElement>) {
-    console.log("[VisitEditView] edit click", {
-      defaultPrevented: e.defaultPrevented,
-      target: (e.target as HTMLElement).tagName,
-      currentTarget: (e.currentTarget as HTMLElement).tagName,
-    });
-    setIsEditing(true);
-  }
-
   function cancel() {
-    console.log("[VisitEditView] cancel() called");
     formRef.current?.reset();
     setIsEditing(false);
   }
@@ -156,7 +125,7 @@ export function VisitEditView({
       <div className={isEditing ? "hidden" : "pt-3"}>
         <button
           type="button"
-          onClick={onEditClick}
+          onClick={() => setIsEditing(true)}
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
           수정하기
