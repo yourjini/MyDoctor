@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { cn, todayKST } from "@/lib/utils";
+import { asPerson, PERSON_COLORS } from "@/lib/people";
 import { DayModal } from "./DayModal";
 
 export type CalendarEvent = {
@@ -9,6 +10,7 @@ export type CalendarEvent = {
   date: string; // YYYY-MM-DD
   title: string;
   type: "visit" | "appointment";
+  subject?: string;
   href: string;
 };
 
@@ -103,14 +105,20 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
                     <div
                       key={e.id}
                       className={cn(
-                        "truncate rounded px-1 py-0.5 text-[10px] leading-tight sm:text-[11px]",
+                        "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] leading-tight sm:text-[11px]",
                         e.type === "visit"
                           ? "bg-emerald-100 text-emerald-900"
                           : "bg-amber-100 text-amber-900",
                       )}
-                      title={e.title}
+                      title={`${asPerson(e.subject)} · ${e.title}`}
                     >
-                      {e.title}
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          PERSON_COLORS[asPerson(e.subject)].dot,
+                        )}
+                      />
+                      <span className="truncate">{e.title}</span>
                     </div>
                   ))}
                   {dayEvents.length > 2 && (
@@ -126,12 +134,14 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
 
         <div className="flex flex-wrap items-center gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground sm:px-4 sm:text-xs">
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            방문이력
+            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-900">
+              방문
+            </span>
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
-            예약
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900">
+              예약
+            </span>
           </span>
           <span className="ml-auto hidden text-muted-foreground/70 sm:inline">
             날짜를 탭하면 추가/수정 메뉴가 열립니다

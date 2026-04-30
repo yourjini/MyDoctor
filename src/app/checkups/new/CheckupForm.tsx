@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { createCheckupAction } from "../actions";
 
 type Extracted = {
@@ -109,17 +110,21 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
-        <Field label="제목" required>
-          <input
-            name="title"
-            required
-            placeholder="예: 2026 종합건강검진"
-            defaultValue={extracted?.title || ""}
-            key={`title-${extracted?.title ?? ""}`}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
+        <Field label="대상자" required>
+          <SubjectSelect />
         </Field>
       </div>
+
+      <Field label="제목" required>
+        <input
+          name="title"
+          required
+          placeholder="예: 2026 종합건강검진"
+          defaultValue={extracted?.title || ""}
+          key={`title-${extracted?.title ?? ""}`}
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        />
+      </Field>
 
       <Field label="병원/검진센터">
         <input

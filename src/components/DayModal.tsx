@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { SubjectBadge } from "./SubjectBadge";
 import type { CalendarEvent } from "./Calendar";
 
 export function DayModal({
@@ -131,13 +132,14 @@ function EntryLink({ event }: { event: CalendarEvent }) {
       <Link
         href={event.href}
         className={cn(
-          "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent",
+          "flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent",
           event.type === "visit"
             ? "border-emerald-200"
             : "border-amber-200",
         )}
       >
-        <span className="truncate">{event.title}</span>
+        <SubjectBadge subject={event.subject} size="sm" />
+        <span className="flex-1 truncate">{event.title}</span>
         <span className="shrink-0 text-xs text-muted-foreground">수정</span>
       </Link>
     </li>

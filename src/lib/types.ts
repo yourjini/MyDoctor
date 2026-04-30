@@ -27,6 +27,7 @@ export type Visit = {
   id: string;
   kind: "visit";
   date: string; // YYYY-MM-DD
+  subject?: string; // 대상자 (가족 구성원). 빈 값/누락은 "전체"로 취급.
   hospitalType: HospitalType | string;
   hospitalName: string;
   doctorName?: string;
@@ -42,6 +43,7 @@ export type Appointment = {
   id: string;
   kind: "appointment";
   datetime: string; // ISO datetime
+  subject?: string; // 대상자
   hospitalName: string;
   hospitalType?: HospitalType | string;
   doctorName?: string;
@@ -55,6 +57,7 @@ export type Checkup = {
   id: string;
   kind: "checkup";
   date: string; // YYYY-MM-DD (year extracted for grouping)
+  subject?: string; // 대상자
   title: string; // e.g. "2026 종합건강검진"
   hospitalName?: string;
   summary: string; // AI-generated or user-edited summary

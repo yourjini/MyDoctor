@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
 import {
   removeCheckupAttachmentAction,
@@ -46,15 +47,19 @@ export function CheckupEditView({
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
               />
             </Field>
-            <Field label="제목">
-              <input
-                name="title"
-                defaultValue={checkup.title}
-                required
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
-              />
+            <Field label="대상자">
+              <SubjectSelect defaultValue={checkup.subject} />
             </Field>
           </div>
+
+          <Field label="제목">
+            <input
+              name="title"
+              defaultValue={checkup.title}
+              required
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
+            />
+          </Field>
 
           <Field label="병원/검진센터">
             <input

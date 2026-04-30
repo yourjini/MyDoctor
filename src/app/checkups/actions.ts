@@ -8,10 +8,12 @@ import {
   removeCheckupAttachment,
   updateCheckup,
 } from "@/lib/store";
+import { asPerson } from "@/lib/people";
 import type { Checkup } from "@/lib/types";
 
 export async function createCheckupAction(formData: FormData) {
   const date = String(formData.get("date") || "").trim();
+  const subject = asPerson(formData.get("subject"));
   const title = String(formData.get("title") || "").trim();
   const hospitalName = String(formData.get("hospitalName") || "").trim() || undefined;
   const summary = String(formData.get("summary") || "").trim();
@@ -37,6 +39,7 @@ export async function createCheckupAction(formData: FormData) {
   const checkup = await createCheckup(
     {
       date,
+      subject,
       title,
       hospitalName,
       summary,
@@ -56,6 +59,7 @@ export async function updateCheckupAction(formData: FormData) {
   if (!id || !year) throw new Error("id/year 누락");
   const patch: Partial<Checkup> = {
     date: String(formData.get("date") || ""),
+    subject: asPerson(formData.get("subject")),
     title: String(formData.get("title") || "").trim(),
     hospitalName: String(formData.get("hospitalName") || "").trim() || undefined,
     summary: String(formData.get("summary") || "").trim(),

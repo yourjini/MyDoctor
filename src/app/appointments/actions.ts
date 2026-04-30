@@ -7,12 +7,14 @@ import {
   deleteAppointment,
   updateAppointment,
 } from "@/lib/store";
+import { asPerson } from "@/lib/people";
 import type { Appointment } from "@/lib/types";
 
 export async function createAppointmentAction(formData: FormData) {
   const date = String(formData.get("date") || "");
   const time = String(formData.get("time") || "09:00");
   const datetime = `${date}T${time}:00`;
+  const subject = asPerson(formData.get("subject"));
   const hospitalName = String(formData.get("hospitalName") || "").trim();
   const hospitalType = String(formData.get("hospitalType") || "") || undefined;
   const doctorName = String(formData.get("doctorName") || "").trim() || undefined;
@@ -24,6 +26,7 @@ export async function createAppointmentAction(formData: FormData) {
 
   const appt = await createAppointment({
     datetime,
+    subject,
     hospitalName,
     hospitalType,
     doctorName,
@@ -44,6 +47,7 @@ export async function updateAppointmentAction(formData: FormData) {
   const time = String(formData.get("time") || "09:00");
   const patch: Partial<Appointment> = {
     datetime: `${date}T${time}:00`,
+    subject: asPerson(formData.get("subject")),
     hospitalName: String(formData.get("hospitalName") || "").trim(),
     hospitalType: String(formData.get("hospitalType") || "") || undefined,
     doctorName: String(formData.get("doctorName") || "").trim() || undefined,

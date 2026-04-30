@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { FilePicker } from "@/components/FilePicker";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
 import {
@@ -37,15 +38,20 @@ export function VisitEditView({
         <input type="hidden" name="year" value={year} />
 
         <fieldset disabled={!isEditing} className="space-y-4 disabled:opacity-90">
-          <Field label="방문일">
-            <input
-              type="date"
-              name="date"
-              defaultValue={visit.date}
-              required
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
-            />
-          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="방문일">
+              <input
+                type="date"
+                name="date"
+                defaultValue={visit.date}
+                required
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
+              />
+            </Field>
+            <Field label="대상자">
+              <SubjectSelect defaultValue={visit.subject} />
+            </Field>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="병원 유형">

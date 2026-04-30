@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { SubjectBadge } from "@/components/SubjectBadge";
+import { SubjectFilter } from "@/components/SubjectFilter";
 import { listVisits } from "@/lib/store";
+import { asPerson, matchesFilter } from "@/lib/people";
 
 export const dynamic = "force-dynamic";
 
-export default async function VisitsPage() {
-  const visits = await listVisits();
+export default async function VisitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
+  const sp = await searchParams;
+  const filter = asPerson(sp.subject);
+  const all = await listVisits();
+  const visits = all.filter((v) => matchesFilter(v.subject, filter));
 
-  // group by year
   const byYear = new Map<string, typeof visits>();
   for (const v of visits) {
     const y = v.date.slice(0, 4);
@@ -29,9 +38,15 @@ export default async function VisitsPage() {
         </Link>
       }
     >
+      <div className="mb-4">
+        <SubjectFilter />
+      </div>
+
       {visits.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-          기록된 방문이 없습니다. 위에서 새 방문을 추가해보세요.
+          {all.length === 0
+            ? "기록된 방문이 없습니다. 위에서 새 방문을 추가해보세요."
+            : "선택된 대상자의 방문 기록이 없습니다."}
         </p>
       ) : (
         <div className="space-y-6">
@@ -45,10 +60,11 @@ export default async function VisitsPage() {
                   <li key={v.id}>
                     <Link
                       href={`/visits/${y}/${v.id}`}
-                      className="flex items-start justify-between p-4 hover:bg-accent/40"
+                      className="flex items-start justify-between gap-3 p-4 hover:bg-accent/40"
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-sm">
+                      <SubjectBadge subject={v.subject} size="md" className="mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
                           <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
                             {v.hospitalType}
                           </span>
@@ -65,7 +81,7 @@ export default async function VisitsPage() {
                           {v.diagnosis}
                         </div>
                       </div>
-                      <div className="ml-4 shrink-0 text-right">
+                      <div className="ml-1 shrink-0 text-right">
                         <div className="text-sm">{v.date}</div>
                         {v.attachments.length > 0 && (
                           <div className="text-xs text-muted-foreground">

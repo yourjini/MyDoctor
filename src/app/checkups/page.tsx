@@ -1,11 +1,22 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { SubjectBadge } from "@/components/SubjectBadge";
+import { SubjectFilter } from "@/components/SubjectFilter";
 import { listCheckups } from "@/lib/store";
+import { asPerson, matchesFilter } from "@/lib/people";
 
 export const dynamic = "force-dynamic";
 
-export default async function CheckupsPage() {
-  const all = await listCheckups();
+export default async function CheckupsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
+  const sp = await searchParams;
+  const filter = asPerson(sp.subject);
+  const everything = await listCheckups();
+  const all = everything.filter((c) => matchesFilter(c.subject, filter));
+
   const byYear = new Map<string, typeof all>();
   for (const c of all) {
     const y = c.date.slice(0, 4);
@@ -27,9 +38,15 @@ export default async function CheckupsPage() {
         </Link>
       }
     >
+      <div className="mb-4">
+        <SubjectFilter />
+      </div>
+
       {all.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-          검진 기록이 없습니다. PDF나 이미지를 업로드하면 자동 요약이 됩니다.
+          {everything.length === 0
+            ? "검진 기록이 없습니다. PDF나 이미지를 업로드하면 자동 요약이 됩니다."
+            : "선택된 대상자의 검진 기록이 없습니다."}
         </p>
       ) : (
         <div className="space-y-6">
@@ -43,27 +60,30 @@ export default async function CheckupsPage() {
                   <li key={c.id}>
                     <Link
                       href={`/checkups/${y}/${c.id}`}
-                      className="block p-4 hover:bg-accent/40"
+                      className="flex items-start gap-3 p-4 hover:bg-accent/40"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{c.title}</div>
-                          {c.hospitalName && (
-                            <div className="text-xs text-muted-foreground">
-                              {c.hospitalName}
-                            </div>
-                          )}
-                          {c.symptoms && (
-                            <div className="mt-2 line-clamp-2 text-xs text-amber-700">
-                              주의: {c.symptoms}
-                            </div>
-                          )}
-                        </div>
-                        <div className="shrink-0 text-right text-xs text-muted-foreground">
-                          {c.date}
-                          {c.attachments.length > 0 && (
-                            <div>첨부 {c.attachments.length}</div>
-                          )}
+                      <SubjectBadge subject={c.subject} size="md" className="mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{c.title}</div>
+                            {c.hospitalName && (
+                              <div className="text-xs text-muted-foreground">
+                                {c.hospitalName}
+                              </div>
+                            )}
+                            {c.symptoms && (
+                              <div className="mt-2 line-clamp-2 text-xs text-amber-700">
+                                주의: {c.symptoms}
+                              </div>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-right text-xs text-muted-foreground">
+                            {c.date}
+                            {c.attachments.length > 0 && (
+                              <div>첨부 {c.attachments.length}</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </Link>

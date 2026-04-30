@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/PageShell";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { FilePicker } from "@/components/FilePicker";
 import { createVisitAction } from "../actions";
 
@@ -18,15 +19,20 @@ export default async function NewVisitPage({
         encType="multipart/form-data"
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
-        <Field label="방문일" required>
-          <input
-            type="date"
-            name="date"
-            defaultValue={initialDate}
-            required
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="방문일" required>
+            <input
+              type="date"
+              name="date"
+              defaultValue={initialDate}
+              required
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="대상자" required>
+            <SubjectSelect />
+          </Field>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형" required>

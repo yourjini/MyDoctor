@@ -1,11 +1,22 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { SubjectBadge } from "@/components/SubjectBadge";
+import { SubjectFilter } from "@/components/SubjectFilter";
 import { listAppointments } from "@/lib/store";
+import { asPerson, matchesFilter } from "@/lib/people";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppointmentsPage() {
-  const all = await listAppointments();
+export default async function AppointmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
+  const sp = await searchParams;
+  const filter = asPerson(sp.subject);
+  const all = (await listAppointments()).filter((a) =>
+    matchesFilter(a.subject, filter),
+  );
   const now = new Date();
   const upcoming = all.filter((a) => new Date(a.datetime) >= now);
   const past = all
@@ -24,16 +35,22 @@ export default async function AppointmentsPage() {
         </Link>
       }
     >
+      <div className="mb-4">
+        <SubjectFilter />
+      </div>
+
       {all.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           예약된 일정이 없습니다.
         </p>
       ) : (
         <div className="space-y-6">
-          <Section title="예정된 예약" items={upcoming} emptyMsg="다가오는 예약이 없습니다." />
-          {past.length > 0 && (
-            <Section title="지난 예약" items={past} muted />
-          )}
+          <Section
+            title="예정된 예약"
+            items={upcoming}
+            emptyMsg="다가오는 예약이 없습니다."
+          />
+          {past.length > 0 && <Section title="지난 예약" items={past} muted />}
         </div>
       )}
     </PageShell>
@@ -64,9 +81,10 @@ function Section({
             <li key={a.id}>
               <Link
                 href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
-                className={`flex items-start justify-between p-4 hover:bg-accent/40 ${muted ? "opacity-70" : ""}`}
+                className={`flex items-start justify-between gap-3 p-4 hover:bg-accent/40 ${muted ? "opacity-70" : ""}`}
               >
-                <div className="min-w-0">
+                <SubjectBadge subject={a.subject} size="md" className="mt-0.5" />
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">
                     {a.hospitalName}
                   </div>
@@ -74,7 +92,7 @@ function Section({
                     {a.reason}
                   </div>
                 </div>
-                <div className="ml-4 shrink-0 text-right text-sm">
+                <div className="ml-1 shrink-0 text-right text-sm">
                   {formatKDT(a.datetime)}
                 </div>
               </Link>

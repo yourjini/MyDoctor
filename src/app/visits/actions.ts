@@ -8,10 +8,12 @@ import {
   removeVisitAttachment,
   updateVisit,
 } from "@/lib/store";
+import { asPerson } from "@/lib/people";
 import type { Visit } from "@/lib/types";
 
 export async function createVisitAction(formData: FormData) {
   const date = String(formData.get("date") || "");
+  const subject = asPerson(formData.get("subject"));
   const hospitalType = String(formData.get("hospitalType") || "내과");
   const hospitalName = String(formData.get("hospitalName") || "").trim();
   const doctorName = String(formData.get("doctorName") || "").trim() || undefined;
@@ -38,6 +40,7 @@ export async function createVisitAction(formData: FormData) {
   const visit = await createVisit(
     {
       date,
+      subject,
       hospitalType,
       hospitalName,
       doctorName,
@@ -60,6 +63,7 @@ export async function updateVisitAction(formData: FormData) {
 
   const patch: Partial<Visit> = {
     date: String(formData.get("date") || ""),
+    subject: asPerson(formData.get("subject")),
     hospitalType: String(formData.get("hospitalType") || ""),
     hospitalName: String(formData.get("hospitalName") || "").trim(),
     doctorName: String(formData.get("doctorName") || "").trim() || undefined,

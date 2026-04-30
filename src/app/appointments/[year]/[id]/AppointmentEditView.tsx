@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { updateAppointmentAction } from "../../actions";
 import type { Appointment } from "@/lib/types";
 
@@ -54,6 +55,10 @@ export function AppointmentEditView({
               />
             </Field>
           </div>
+
+          <Field label="대상자">
+            <SubjectSelect defaultValue={appt.subject} />
+          </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="병원 유형">

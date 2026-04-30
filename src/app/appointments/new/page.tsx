@@ -1,5 +1,6 @@
 import { PageShell } from "@/components/PageShell";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
+import { SubjectSelect } from "@/components/SubjectSelect";
 import { createAppointmentAction } from "../actions";
 
 export default async function NewAppointmentPage({
@@ -36,6 +37,10 @@ export default async function NewAppointmentPage({
             />
           </Field>
         </div>
+
+        <Field label="대상자" required>
+          <SubjectSelect />
+        </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="병원 유형">

@@ -1,15 +1,27 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { Calendar, type CalendarEvent } from "@/components/Calendar";
+import { SubjectBadge } from "@/components/SubjectBadge";
+import { SubjectFilter } from "@/components/SubjectFilter";
 import { listAppointments, listVisits } from "@/lib/store";
+import { asPerson, matchesFilter } from "@/lib/people";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const [visits, appts] = await Promise.all([
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ subject?: string }>;
+}) {
+  const sp = await searchParams;
+  const filter = asPerson(sp.subject);
+
+  const [allVisits, allAppts] = await Promise.all([
     listVisits(),
     listAppointments(),
   ]);
+  const visits = allVisits.filter((v) => matchesFilter(v.subject, filter));
+  const appts = allAppts.filter((a) => matchesFilter(a.subject, filter));
 
   const events: CalendarEvent[] = [
     ...visits.map((v) => ({
@@ -17,6 +29,7 @@ export default async function HomePage() {
       date: v.date,
       title: `${v.hospitalName} · ${v.diagnosis}`,
       type: "visit" as const,
+      subject: v.subject,
       href: `/visits/${v.date.slice(0, 4)}/${v.id}`,
     })),
     ...appts.map((a) => ({
@@ -24,6 +37,7 @@ export default async function HomePage() {
       date: a.datetime.slice(0, 10),
       title: `${a.hospitalName}${a.reason ? ` · ${a.reason}` : ""}`,
       type: "appointment" as const,
+      subject: a.subject,
       href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
     })),
   ];
@@ -35,6 +49,10 @@ export default async function HomePage() {
 
   return (
     <PageShell title="캘린더">
+      <div className="mb-3">
+        <SubjectFilter />
+      </div>
+
       <Calendar events={events} />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -58,15 +76,16 @@ export default async function HomePage() {
                 <li key={a.id}>
                   <Link
                     href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
-                    className="flex items-center justify-between rounded p-2 text-sm hover:bg-accent"
+                    className="flex items-center gap-3 rounded p-2 text-sm hover:bg-accent"
                   >
-                    <div>
-                      <div className="font-medium">{a.hospitalName}</div>
-                      <div className="text-xs text-muted-foreground">
+                    <SubjectBadge subject={a.subject} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{a.hospitalName}</div>
+                      <div className="text-xs text-muted-foreground truncate">
                         {a.reason}
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="shrink-0 text-xs text-muted-foreground">
                       {formatKDateTime(a.datetime)}
                     </div>
                   </Link>
@@ -96,15 +115,16 @@ export default async function HomePage() {
                 <li key={v.id}>
                   <Link
                     href={`/visits/${v.date.slice(0, 4)}/${v.id}`}
-                    className="flex items-center justify-between rounded p-2 text-sm hover:bg-accent"
+                    className="flex items-center gap-3 rounded p-2 text-sm hover:bg-accent"
                   >
-                    <div>
-                      <div className="font-medium">{v.hospitalName}</div>
-                      <div className="text-xs text-muted-foreground">
+                    <SubjectBadge subject={v.subject} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{v.hospitalName}</div>
+                      <div className="text-xs text-muted-foreground truncate">
                         {v.diagnosis}
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="shrink-0 text-xs text-muted-foreground">
                       {v.date}
                     </div>
                   </Link>
