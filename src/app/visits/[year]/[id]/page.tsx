@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
+import { KindChip } from "@/components/KindChip";
 import { getVisit } from "@/lib/store";
 import { deleteVisitAction } from "../../actions";
 import { formatDate } from "@/lib/utils";
@@ -29,6 +30,10 @@ export default async function VisitDetail({
         </Link>
       }
     >
+      <div className="mb-3">
+        <KindChip kind="visit" />
+      </div>
+
       <VisitEditView visit={visit} year={year} />
 
       <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">

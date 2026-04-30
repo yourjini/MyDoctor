@@ -4,6 +4,8 @@ import { SubjectBadge } from "@/components/SubjectBadge";
 import { SubjectFilter } from "@/components/SubjectFilter";
 import { listVisits } from "@/lib/store";
 import { asPerson, matchesFilter } from "@/lib/people";
+import { KIND_STYLES } from "@/lib/kinds";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +34,10 @@ export default async function VisitsPage({
       action={
         <Link
           href="/visits/new"
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
+          className={cn(
+            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            KIND_STYLES.visit.solid,
+          )}
         >
           + 새 방문
         </Link>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
+import { KindChip } from "@/components/KindChip";
 import { getAppointment } from "@/lib/store";
 import { deleteAppointmentAction } from "../../actions";
 import { AppointmentEditView } from "./AppointmentEditView";
@@ -28,6 +29,10 @@ export default async function AppointmentDetail({
         </Link>
       }
     >
+      <div className="mb-3">
+        <KindChip kind="appointment" />
+      </div>
+
       <AppointmentEditView appt={appt} year={year} />
 
       <div className="mt-6 flex items-center justify-end">

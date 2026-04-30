@@ -4,6 +4,8 @@ import { SubjectBadge } from "@/components/SubjectBadge";
 import { SubjectFilter } from "@/components/SubjectFilter";
 import { listAppointments } from "@/lib/store";
 import { asPerson, matchesFilter } from "@/lib/people";
+import { KIND_STYLES } from "@/lib/kinds";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,10 @@ export default async function AppointmentsPage({
       action={
         <Link
           href="/appointments/new"
-          className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
+          className={cn(
+            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            KIND_STYLES.appointment.solid,
+          )}
         >
           + 새 예약
         </Link>

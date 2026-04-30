@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
+import { KindChip } from "@/components/KindChip";
 import { getCheckup } from "@/lib/store";
 import { deleteCheckupAction } from "../../actions";
 import { formatDate } from "@/lib/utils";
@@ -29,6 +30,10 @@ export default async function CheckupDetail({
         </Link>
       }
     >
+      <div className="mb-3">
+        <KindChip kind="checkup" />
+      </div>
+
       <CheckupEditView checkup={c} year={year} />
 
       <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">

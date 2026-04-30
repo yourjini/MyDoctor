@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { KIND_STYLES, type RecordKind } from "@/lib/kinds";
 import { SubjectBadge } from "./SubjectBadge";
 import type { CalendarEvent } from "./Calendar";
 
@@ -89,12 +90,21 @@ export function DayModal({
         )}
 
         <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row">
-          <AddButton href={`/visits/new?date=${date}`} label="방문 추가" />
+          <AddButton
+            href={`/visits/new?date=${date}`}
+            label="방문 추가"
+            kind="visit"
+          />
           <AddButton
             href={`/appointments/new?date=${date}`}
             label="예약 추가"
+            kind="appointment"
           />
-          <AddButton href={`/checkups/new?date=${date}`} label="검진 추가" />
+          <AddButton
+            href={`/checkups/new?date=${date}`}
+            label="검진 추가"
+            kind="checkup"
+          />
         </div>
       </div>
     </div>
@@ -146,11 +156,22 @@ function EntryLink({ event }: { event: CalendarEvent }) {
   );
 }
 
-function AddButton({ href, label }: { href: string; label: string }) {
+function AddButton({
+  href,
+  label,
+  kind,
+}: {
+  href: string;
+  label: string;
+  kind: RecordKind;
+}) {
   return (
     <Link
       href={href}
-      className="flex-1 rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:opacity-90"
+      className={cn(
+        "flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-colors",
+        KIND_STYLES[kind].solid,
+      )}
     >
       + {label}
     </Link>
