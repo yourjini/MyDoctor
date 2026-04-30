@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "@/lib/github";
+import { heicToJpeg, isHeic } from "@/lib/images";
 
 // Streams a file from the data repo, authenticated through the app session.
 // This avoids exposing raw GitHub URLs (which would require a public repo
@@ -16,22 +17,35 @@ export async function GET(
   const file = await readFile(path);
   if (!file) return new NextResponse("not found", { status: 404 });
 
-  const ext = path.toLowerCase().split(".").pop() || "";
-  const ct =
-    ext === "pdf"
-      ? "application/pdf"
-      : ext === "png"
-        ? "image/png"
-        : ext === "jpg" || ext === "jpeg"
-          ? "image/jpeg"
-          : ext === "gif"
-            ? "image/gif"
-            : ext === "webp"
-              ? "image/webp"
-              : "application/octet-stream";
+  let buf = file.content;
+  let ct: string;
 
-  // Return a fresh Uint8Array to satisfy BodyInit typing
-  const body = new Uint8Array(file.content);
+  if (isHeic(path)) {
+    // Files uploaded before HEIC→JPEG conversion was wired up. Convert
+    // on the fly so they render in browsers that don't support HEIC.
+    try {
+      buf = await heicToJpeg(buf);
+      ct = "image/jpeg";
+    } catch {
+      ct = "image/heic";
+    }
+  } else {
+    const ext = path.toLowerCase().split(".").pop() || "";
+    ct =
+      ext === "pdf"
+        ? "application/pdf"
+        : ext === "png"
+          ? "image/png"
+          : ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : ext === "gif"
+              ? "image/gif"
+              : ext === "webp"
+                ? "image/webp"
+                : "application/octet-stream";
+  }
+
+  const body = new Uint8Array(buf);
   return new NextResponse(body, {
     headers: {
       "Content-Type": ct,

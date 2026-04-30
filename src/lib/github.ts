@@ -61,7 +61,22 @@ export async function readFile(path: string): Promise<{
     });
     if (Array.isArray(res.data) || res.data.type !== "file") return null;
     const data = res.data as { content: string; encoding: string; sha: string };
-    const buf = Buffer.from(data.content, data.encoding as BufferEncoding);
+    // GitHub Contents API only returns content for files <=1MB.
+    // For larger files, content is empty — fall back to the Git Blob API
+    // (supports up to 100MB).
+    if (data.content && data.content.length > 0) {
+      const buf = Buffer.from(data.content, data.encoding as BufferEncoding);
+      return { content: buf, sha: data.sha };
+    }
+    const blob = await getOctokit().git.getBlob({
+      owner,
+      repo,
+      file_sha: data.sha,
+    });
+    const buf = Buffer.from(
+      blob.data.content,
+      blob.data.encoding as BufferEncoding,
+    );
     return { content: buf, sha: data.sha };
   } catch (err: unknown) {
     if (isNotFound(err)) return null;

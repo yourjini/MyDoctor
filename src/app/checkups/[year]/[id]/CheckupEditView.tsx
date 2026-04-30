@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { SubjectSelect } from "@/components/SubjectSelect";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
+import { AttachmentGallery } from "@/components/AttachmentGallery";
 import {
   removeCheckupAttachmentAction,
   updateCheckupAction,
@@ -143,44 +144,22 @@ export function CheckupEditView({
       {checkup.attachments.length > 0 && (
         <section className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
           <h3 className="mb-3 text-sm font-medium">원본 파일</h3>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {checkup.attachments.map((a) => (
-              <li key={a.path} className="relative rounded-md border p-2">
-                <a
-                  href={`/api/file/${a.path}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block"
-                >
-                  {a.contentType.startsWith("image/") ? (
-                    <img
-                      src={`/api/file/${a.path}`}
-                      alt={a.filename}
-                      className="h-32 w-full rounded object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-32 items-center justify-center rounded bg-muted text-3xl">
-                      📄
-                    </div>
-                  )}
-                  <div className="mt-1 truncate text-xs">{a.filename}</div>
-                </a>
-                <form
-                  action={removeCheckupAttachmentAction}
-                  className={
-                    isEditing
-                      ? "absolute -right-1.5 -top-1.5"
-                      : "hidden"
-                  }
-                >
-                  <input type="hidden" name="id" value={checkup.id} />
-                  <input type="hidden" name="year" value={year} />
-                  <input type="hidden" name="path" value={a.path} />
-                  <AttachmentDeleteButton filename={a.filename} />
-                </form>
-              </li>
-            ))}
-          </ul>
+          <AttachmentGallery
+            attachments={checkup.attachments}
+            itemAccessory={(a) => (
+              <form
+                action={removeCheckupAttachmentAction}
+                className={
+                  isEditing ? "absolute -right-1.5 -top-1.5" : "hidden"
+                }
+              >
+                <input type="hidden" name="id" value={checkup.id} />
+                <input type="hidden" name="year" value={year} />
+                <input type="hidden" name="path" value={a.path} />
+                <AttachmentDeleteButton filename={a.filename} />
+              </form>
+            )}
+          />
         </section>
       )}
     </>
