@@ -66,16 +66,15 @@ export default async function HomePage({
     })),
   ];
 
-  // Split visits by today's KST date so future-dated visits don't masquerade
-  // as recent ones. Pre-created future visits get surfaced in the upcoming
-  // list alongside appointments instead.
+  // Visits are recorded after the fact, so a visit dated today belongs in
+  // "최근 방문". Only strictly future-dated visits (pre-created entries
+  // like a recurring weekly therapy session) belong in the upcoming list.
   const todayKey = todayKST().key;
-  const futureVisits = visits.filter((v) => v.date >= todayKey);
-  const pastVisits = visits.filter((v) => v.date < todayKey);
+  const futureVisits = visits.filter((v) => v.date > todayKey);
+  const pastVisits = visits.filter((v) => v.date <= todayKey);
 
-  const futureAppts = appts.filter(
-    (a) => a.datetime.slice(0, 10) >= todayKey,
-  );
+  const now = new Date();
+  const futureAppts = appts.filter((a) => new Date(a.datetime) >= now);
 
   const upcoming: UpcomingItem[] = [
     ...futureAppts.map((a) => ({
