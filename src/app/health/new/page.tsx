@@ -63,10 +63,11 @@ export default async function NewHealthLogPage({
           <MenstruationRadios />
         </Field>
 
-        <Field label="메모">
+        <Field label="메모" required>
           <textarea
             name="note"
             rows={3}
+            required
             placeholder="짧게 한줄도 좋아요"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />

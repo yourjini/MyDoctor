@@ -66,9 +66,7 @@ export async function createHealthLogAction(formData: FormData) {
   const note = String(formData.get("note") || "").trim() || undefined;
 
   if (!date) throw new Error("날짜는 필수입니다");
-  if (bodyTags.length === 0 && moodTags.length === 0 && !note) {
-    throw new Error("최소 한 가지 태그나 메모를 입력하세요");
-  }
+  if (!note) throw new Error("메모는 필수입니다");
 
   // 박란하만 moodScale/sleepHours 적용
   const isBipolarSubject = subject === "박란하";

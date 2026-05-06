@@ -42,7 +42,7 @@ export function HealthEditView({
       <input type="hidden" name="year" value={year} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="날짜">
+        <Field label="날짜" required>
           <input
             type="date"
             name="date"
@@ -51,7 +51,7 @@ export function HealthEditView({
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
-        <Field label="대상자">
+        <Field label="대상자" required>
           <BipolarAwareFields
             defaultSubject={log.subject}
             defaultMoodScale={log.moodScale}
@@ -87,10 +87,11 @@ export function HealthEditView({
         <MenstruationRadios defaultValue={log.menstruation} />
       </Field>
 
-      <Field label="메모">
+      <Field label="메모" required>
         <textarea
           name="note"
           rows={3}
+          required
           defaultValue={log.note ?? ""}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
@@ -211,14 +212,19 @@ function TagList({ tags, className }: { tags: string[]; className: string }) {
 
 function Field({
   label,
+  required,
   children,
 }: {
   label: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <label className="mb-1 block text-sm font-medium">
+        {label}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
+      </label>
       {children}
     </div>
   );
