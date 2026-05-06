@@ -13,11 +13,13 @@ export function BipolarAwareFields({
   defaultMoodScale,
   defaultSleepHours,
   defaultMoodTags,
+  defaultMeasuredAt,
 }: {
   defaultSubject?: string;
   defaultMoodScale?: number;
   defaultSleepHours?: number;
   defaultMoodTags?: string[];
+  defaultMeasuredAt?: string;
 }) {
   const [subject, setSubject] = useState(defaultSubject ?? DEFAULT_PERSON);
   const isBipolar = subject === BIPOLAR_SUBJECT;
@@ -41,6 +43,23 @@ export function BipolarAwareFields({
         <div className="rounded-lg border border-rose-200 bg-rose-50/30 p-3 space-y-4 mt-2">
           <div className="text-xs font-medium text-rose-900">
             박란하 — 양극성 추적
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                측정시간 (선택)
+              </label>
+              <input
+                type="time"
+                name="measuredAt"
+                defaultValue={defaultMeasuredAt ?? ""}
+                className="rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <p className="pb-3 text-xs text-muted-foreground">
+              아침/저녁 따로 기록할 때 일중 변동을 추적합니다
+            </p>
           </div>
 
           <div>

@@ -57,6 +57,7 @@ export function HealthEditView({
             defaultMoodScale={log.moodScale}
             defaultSleepHours={log.sleepHours}
             defaultMoodTags={log.moodTags}
+            defaultMeasuredAt={log.measuredAt}
           />
         </Field>
       </div>
@@ -118,7 +119,14 @@ export function HealthEditView({
 function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
   return (
     <div className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
-      <Row label="날짜">{log.date}</Row>
+      <Row label="날짜">
+        {log.date}
+        {log.measuredAt && (
+          <span className="ml-2 text-muted-foreground">
+            · {log.measuredAt}
+          </span>
+        )}
+      </Row>
       <Row label="대상자">{log.subject || "전체"}</Row>
       {log.severity ? (
         <Row label="컨디션">

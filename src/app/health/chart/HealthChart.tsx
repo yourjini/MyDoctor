@@ -20,6 +20,7 @@ import type { HealthLog } from "@/lib/types";
 const BIPOLAR_SUBJECT = "박란하";
 
 type RangeDays = 30 | 90 | 180;
+type ChartView = "daily" | "intraday";
 
 const POSITIVE_TAGS = new Set(MOOD_TAG_GROUPS[0].tags);
 const NEGATIVE_TAGS = new Set([
@@ -30,13 +31,15 @@ const NEGATIVE_TAGS = new Set([
 export function HealthChart({ logs }: { logs: HealthLog[] }) {
   const [subject, setSubject] = useState<Person>("박란하");
   const [days, setDays] = useState<RangeDays>(30);
-
-  const { data, periodSpans } = useMemo(
-    () => buildSeries(logs, subject, days),
-    [logs, subject, days],
-  );
+  const [view, setView] = useState<ChartView>("daily");
 
   const isBipolar = subject === BIPOLAR_SUBJECT;
+  const effectiveView: ChartView = isBipolar ? view : "daily";
+
+  const { data, periodSpans } = useMemo(
+    () => buildSeries(logs, subject, days, effectiveView),
+    [logs, subject, days, effectiveView],
+  );
 
   const hasData = data.some(
     (d) =>
@@ -87,6 +90,28 @@ export function HealthChart({ logs }: { logs: HealthLog[] }) {
             </button>
           ))}
         </div>
+        {isBipolar && (
+          <>
+            <span className="mx-2 h-5 w-px bg-border" />
+            <div className="flex gap-1.5">
+              {(["daily", "intraday"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "rounded-md border px-2.5 py-1 text-xs",
+                    view === v
+                      ? "bg-foreground text-background"
+                      : "bg-background hover:bg-accent",
+                  )}
+                >
+                  {v === "daily" ? "일별" : "시간별"}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {!hasData ? (
@@ -288,6 +313,7 @@ function buildSeries(
   logs: HealthLog[],
   subject: Person,
   days: number,
+  view: ChartView = "daily",
 ): { data: Point[]; periodSpans: { start: string; end: string }[] } {
   // Filter to subject (subject-only — chart needs single person resolution).
   const filtered = logs.filter((l) => (l.subject ?? "전체") === subject);
@@ -295,6 +321,11 @@ function buildSeries(
   const today = startOfDay(new Date());
   const start = new Date(today);
   start.setDate(start.getDate() - (days - 1));
+  const startStr = toDateStr(start);
+
+  if (view === "intraday") {
+    return buildIntradaySeries(filtered, startStr);
+  }
 
   // Aggregate per date
   const byDate = new Map<string, HealthLog[]>();
@@ -406,6 +437,59 @@ function buildSeries(
   return { data, periodSpans };
 }
 
+function buildIntradaySeries(
+  filtered: HealthLog[],
+  startStr: string,
+): { data: Point[]; periodSpans: { start: string; end: string }[] } {
+  const inRange = filtered.filter((l) => l.date >= startStr);
+  // Sort by date + time (createdAt fallback for time)
+  const sorted = inRange.slice().sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    const at = a.measuredAt ?? a.createdAt.slice(11, 16);
+    const bt = b.measuredAt ?? b.createdAt.slice(11, 16);
+    return at.localeCompare(bt);
+  });
+
+  const data: Point[] = sorted.map((l) => {
+    const time = l.measuredAt ?? l.createdAt.slice(11, 16);
+    const [, m, d] = l.date.split("-");
+    const label = `${Number(m)}/${Number(d)} ${time}`;
+    let manic = 0;
+    let hasManic = false;
+    for (const t of l.moodTags) {
+      if (MANIC_TAGS.has(t)) {
+        manic += 1;
+        hasManic = true;
+      }
+    }
+    let mood = 0;
+    let hasMood = false;
+    for (const t of l.moodTags) {
+      if (POSITIVE_TAGS.has(t)) {
+        mood += 1;
+        hasMood = true;
+      } else if (NEGATIVE_TAGS.has(t)) {
+        mood -= 1;
+        hasMood = true;
+      }
+    }
+    return {
+      date: label,
+      severity: l.severity ?? null,
+      mood: hasMood ? mood : null,
+      moodScale: l.moodScale ?? null,
+      sleepHours: l.sleepHours ?? null,
+      manicCount: hasManic ? manic : null,
+      menstruation: !!l.menstruation,
+      bodyTags: l.bodyTags,
+      moodTags: l.moodTags,
+    };
+  });
+
+  // intraday view: skip menstruation reference areas (date keys don't match)
+  return { data, periodSpans: [] };
+}
+
 function startOfDay(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -420,9 +504,13 @@ function toDateStr(d: Date): string {
 }
 
 function shortDate(s: string): string {
-  // YYYY-MM-DD → M/D
-  const [, m, d] = s.split("-");
-  return `${Number(m)}/${Number(d)}`;
+  // YYYY-MM-DD → M/D, intraday "M/D HH:MM" → return as-is
+  if (s.includes(" ")) return s;
+  if (s.includes("-")) {
+    const [, m, d] = s.split("-");
+    return `${Number(m)}/${Number(d)}`;
+  }
+  return s;
 }
 
 function ChartCard({

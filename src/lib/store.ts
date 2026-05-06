@@ -397,6 +397,9 @@ export async function listHealthLogs(): Promise<HealthLog[]> {
   const all = await listAllJSON<HealthLog>("data/health");
   return all.sort((a, b) => {
     if (a.date !== b.date) return b.date.localeCompare(a.date);
+    const at = a.measuredAt ?? a.createdAt.slice(11, 16);
+    const bt = b.measuredAt ?? b.createdAt.slice(11, 16);
+    if (at !== bt) return bt.localeCompare(at);
     return b.createdAt.localeCompare(a.createdAt);
   });
 }

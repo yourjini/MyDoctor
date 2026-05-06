@@ -94,6 +94,11 @@ export default async function HealthPage({
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            {l.measuredAt && (
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
+                                {l.measuredAt}
+                              </span>
+                            )}
                             {l.severity && (
                               <span className="rounded bg-muted px-1.5 py-0.5">
                                 컨디션 {l.severity} · {SEVERITY_LABEL[l.severity]}

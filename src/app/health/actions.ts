@@ -54,6 +54,14 @@ function parseSleepHours(formData: FormData): number | undefined {
   return Math.round(n * 2) / 2; // 0.5 단위
 }
 
+function parseMeasuredAt(formData: FormData): string | undefined {
+  const raw = String(formData.get("measuredAt") || "").trim();
+  if (!raw) return undefined;
+  // HH:MM 24h
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(raw)) return undefined;
+  return raw;
+}
+
 export async function createHealthLogAction(formData: FormData) {
   const date = String(formData.get("date") || "");
   const subject = asPerson(formData.get("subject"));
@@ -67,10 +75,11 @@ export async function createHealthLogAction(formData: FormData) {
 
   if (!date) throw new Error("날짜는 필수입니다");
 
-  // 박란하만 moodScale/sleepHours 적용
+  // 박란하만 moodScale/sleepHours/measuredAt 적용
   const isBipolarSubject = subject === "박란하";
   const moodScale = isBipolarSubject ? parseMoodScale(formData) : undefined;
   const sleepHours = isBipolarSubject ? parseSleepHours(formData) : undefined;
+  const measuredAt = isBipolarSubject ? parseMeasuredAt(formData) : undefined;
 
   await createHealthLog({
     date,
@@ -82,6 +91,7 @@ export async function createHealthLogAction(formData: FormData) {
     note,
     moodScale,
     sleepHours,
+    measuredAt,
   });
 
   revalidatePath("/health");
@@ -111,6 +121,7 @@ export async function updateHealthLogAction(formData: FormData) {
     note: String(formData.get("note") || "").trim() || undefined,
     moodScale: isBipolarSubject ? parseMoodScale(formData) : undefined,
     sleepHours: isBipolarSubject ? parseSleepHours(formData) : undefined,
+    measuredAt: isBipolarSubject ? parseMeasuredAt(formData) : undefined,
   };
 
   await updateHealthLog(year, id, patch);

@@ -84,6 +84,7 @@ export type HealthLog = {
   // 양극성장애 추적용 (박란하 전용 입력)
   moodScale?: number; // -5(우울) ~ 0(평온) ~ +5(조증)
   sleepHours?: number; // 0~24
+  measuredAt?: string; // HH:MM (선택). 일중 변동 추적용
   createdAt: string;
   updatedAt: string;
 };
