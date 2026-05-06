@@ -87,11 +87,10 @@ export function HealthEditView({
         <MenstruationRadios defaultValue={log.menstruation} />
       </Field>
 
-      <Field label="메모" required>
+      <Field label="메모">
         <textarea
           name="note"
           rows={3}
-          required
           defaultValue={log.note ?? ""}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
