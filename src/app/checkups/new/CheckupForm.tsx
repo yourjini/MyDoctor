@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { SubjectSelect } from "@/components/SubjectSelect";
+import { isPdf, pdfToImages } from "@/lib/pdf-to-images";
 import { createCheckupAction } from "../actions";
 
 type Extracted = {
@@ -35,14 +36,28 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
     setExtracting(true);
     setExtractError(null);
     try {
+      // PDF는 페이지별 JPEG로 클라이언트에서 변환 (Vercel 4.5MB body 제한 회피).
+      // 원본 PDF는 files state에 그대로 남아 저장 시 첨부로 업로드됨.
       const fd = new FormData();
-      for (const f of files) fd.append("files", f);
+      for (const f of files) {
+        if (isPdf(f)) {
+          const imgs = await pdfToImages(f);
+          for (const img of imgs) fd.append("files", img);
+        } else {
+          fd.append("files", f);
+        }
+      }
       const res = await fetch("/api/checkups/extract", {
         method: "POST",
         body: fd,
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (res.status === 413) {
+          throw new Error(
+            "분석 요청 용량 초과. PDF 페이지 수가 너무 많거나 해상도가 높습니다.",
+          );
+        }
         throw new Error(data.error || `${res.status}`);
       }
       const data = (await res.json()) as Extracted;
