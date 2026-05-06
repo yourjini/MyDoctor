@@ -1,16 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { SubjectSelect } from "@/components/SubjectSelect";
 import { TagPicker } from "@/components/TagPicker";
 import {
   BODY_TAG_GROUPS,
   MENSTRUATION_LABEL,
   MOOD_TAG_GROUPS,
   SEVERITY_LABEL,
+  MANIC_TAGS,
 } from "@/lib/health-tags";
 import { updateHealthLogAction } from "../../actions";
 import type { HealthLog } from "@/lib/types";
+import { BipolarAwareFields } from "../../BipolarFields";
 
 export function HealthEditView({
   log,
@@ -51,7 +52,12 @@ export function HealthEditView({
           />
         </Field>
         <Field label="대상자">
-          <SubjectSelect defaultValue={log.subject} />
+          <BipolarAwareFields
+            defaultSubject={log.subject}
+            defaultMoodScale={log.moodScale}
+            defaultSleepHours={log.sleepHours}
+            defaultMoodTags={log.moodTags}
+          />
         </Field>
       </div>
 
@@ -72,7 +78,7 @@ export function HealthEditView({
         <TagPicker
           name="moodTags"
           groups={MOOD_TAG_GROUPS}
-          defaultValue={log.moodTags}
+          defaultValue={log.moodTags.filter((t) => !MANIC_TAGS.has(t))}
           selectedClass="bg-indigo-500 text-white border-indigo-500"
         />
       </Field>
@@ -119,6 +125,25 @@ function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
           {log.severity} · {SEVERITY_LABEL[log.severity]}
         </Row>
       ) : null}
+      {log.moodScale != null && (
+        <Row label="조증/우울">
+          <span
+            className={
+              log.moodScale > 0
+                ? "text-orange-700"
+                : log.moodScale < 0
+                  ? "text-blue-700"
+                  : ""
+            }
+          >
+            {log.moodScale > 0 ? `+${log.moodScale}` : log.moodScale}
+            {log.moodScale === 0 && " (평온)"}
+          </span>
+        </Row>
+      )}
+      {log.sleepHours != null && (
+        <Row label="수면시간">{log.sleepHours} 시간</Row>
+      )}
       {log.bodyTags.length > 0 && (
         <Row label="아픈 곳 / 증상">
           <TagList tags={log.bodyTags} className="bg-rose-50 text-rose-700" />

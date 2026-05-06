@@ -99,6 +99,24 @@ export default async function HealthPage({
                                 컨디션 {l.severity} · {SEVERITY_LABEL[l.severity]}
                               </span>
                             )}
+                            {l.moodScale != null && (
+                              <span
+                                className={
+                                  l.moodScale > 0
+                                    ? "rounded bg-orange-100 px-1.5 py-0.5 text-orange-800"
+                                    : l.moodScale < 0
+                                      ? "rounded bg-blue-100 px-1.5 py-0.5 text-blue-800"
+                                      : "rounded bg-muted px-1.5 py-0.5"
+                                }
+                              >
+                                {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
+                              </span>
+                            )}
+                            {l.sleepHours != null && (
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                                💤 {l.sleepHours}h
+                              </span>
+                            )}
                             {l.menstruation && (
                               <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
                                 생리 {MENSTRUATION_LABEL[l.menstruation]}

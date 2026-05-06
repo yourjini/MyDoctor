@@ -38,11 +38,29 @@ function parseMenstruation(formData: FormData): MenstruationFlow | undefined {
   return undefined;
 }
 
+function parseMoodScale(formData: FormData): number | undefined {
+  const raw = String(formData.get("moodScale") || "").trim();
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < -5 || n > 5) return undefined;
+  return Math.round(n);
+}
+
+function parseSleepHours(formData: FormData): number | undefined {
+  const raw = String(formData.get("sleepHours") || "").trim();
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 24) return undefined;
+  return Math.round(n * 2) / 2; // 0.5 단위
+}
+
 export async function createHealthLogAction(formData: FormData) {
   const date = String(formData.get("date") || "");
   const subject = asPerson(formData.get("subject"));
   const bodyTags = parseTags(formData, "bodyTags");
-  const moodTags = parseTags(formData, "moodTags");
+  const moodTagsBase = parseTags(formData, "moodTags");
+  const manicTags = parseTags(formData, "manicTags");
+  const moodTags = Array.from(new Set([...moodTagsBase, ...manicTags]));
   const severity = parseSeverity(formData);
   const menstruation = parseMenstruation(formData);
   const note = String(formData.get("note") || "").trim() || undefined;
@@ -52,6 +70,11 @@ export async function createHealthLogAction(formData: FormData) {
     throw new Error("최소 한 가지 태그나 메모를 입력하세요");
   }
 
+  // 박란하만 moodScale/sleepHours 적용
+  const isBipolarSubject = subject === "박란하";
+  const moodScale = isBipolarSubject ? parseMoodScale(formData) : undefined;
+  const sleepHours = isBipolarSubject ? parseSleepHours(formData) : undefined;
+
   await createHealthLog({
     date,
     subject,
@@ -60,6 +83,8 @@ export async function createHealthLogAction(formData: FormData) {
     severity,
     menstruation,
     note,
+    moodScale,
+    sleepHours,
   });
 
   revalidatePath("/health");
@@ -72,14 +97,23 @@ export async function updateHealthLogAction(formData: FormData) {
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
 
+  const subject = asPerson(formData.get("subject"));
+  const isBipolarSubject = subject === "박란하";
+
+  const moodTagsBase = parseTags(formData, "moodTags");
+  const manicTags = parseTags(formData, "manicTags");
+  const moodTags = Array.from(new Set([...moodTagsBase, ...manicTags]));
+
   const patch: Partial<HealthLog> = {
     date: String(formData.get("date") || ""),
-    subject: asPerson(formData.get("subject")),
+    subject,
     bodyTags: parseTags(formData, "bodyTags"),
-    moodTags: parseTags(formData, "moodTags"),
+    moodTags,
     severity: parseSeverity(formData),
     menstruation: parseMenstruation(formData),
     note: String(formData.get("note") || "").trim() || undefined,
+    moodScale: isBipolarSubject ? parseMoodScale(formData) : undefined,
+    sleepHours: isBipolarSubject ? parseSleepHours(formData) : undefined,
   };
 
   await updateHealthLog(year, id, patch);

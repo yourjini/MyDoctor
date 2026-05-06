@@ -6,15 +6,18 @@ import {
   Line,
   LineChart,
   ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
-import { MOOD_TAG_GROUPS } from "@/lib/health-tags";
+import { MANIC_TAGS, MOOD_TAG_GROUPS } from "@/lib/health-tags";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
+
+const BIPOLAR_SUBJECT = "박란하";
 
 type RangeDays = 30 | 90 | 180;
 
@@ -33,8 +36,15 @@ export function HealthChart({ logs }: { logs: HealthLog[] }) {
     [logs, subject, days],
   );
 
+  const isBipolar = subject === BIPOLAR_SUBJECT;
+
   const hasData = data.some(
-    (d) => d.severity != null || d.mood != null || d.menstruation,
+    (d) =>
+      d.severity != null ||
+      d.mood != null ||
+      d.moodScale != null ||
+      d.sleepHours != null ||
+      d.menstruation,
   );
 
   return (
@@ -85,6 +95,116 @@ export function HealthChart({ logs }: { logs: HealthLog[] }) {
         </p>
       ) : (
         <>
+          {isBipolar && (
+            <>
+              <ChartCard title="조증/우울 스케일 (-5 우울 ~ +5 조증)">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart
+                    data={data}
+                    margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tickFormatter={shortDate} fontSize={11} />
+                    <YAxis
+                      domain={[-5, 5]}
+                      ticks={[-5, -3, 0, 3, 5]}
+                      fontSize={11}
+                    />
+                    <Tooltip content={<DayTooltip />} />
+                    <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
+                    <ReferenceArea
+                      y1={0}
+                      y2={5}
+                      fill="#fb923c"
+                      fillOpacity={0.06}
+                      ifOverflow="visible"
+                    />
+                    <ReferenceArea
+                      y1={-5}
+                      y2={0}
+                      fill="#3b82f6"
+                      fillOpacity={0.06}
+                      ifOverflow="visible"
+                    />
+                    {periodSpans.map((s, i) => (
+                      <ReferenceArea
+                        key={`p-${i}`}
+                        x1={s.start}
+                        x2={s.end}
+                        fill="#fb7185"
+                        fillOpacity={0.12}
+                        ifOverflow="visible"
+                      />
+                    ))}
+                    <Line
+                      type="monotone"
+                      dataKey="moodScale"
+                      stroke="#9333ea"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="수면시간 (조증 조기 신호)">
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart
+                    data={data}
+                    margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tickFormatter={shortDate} fontSize={11} />
+                    <YAxis domain={[0, 12]} ticks={[0, 4, 6, 8, 10, 12]} fontSize={11} />
+                    <Tooltip content={<DayTooltip />} />
+                    <ReferenceLine
+                      y={6}
+                      stroke="#dc2626"
+                      strokeDasharray="3 3"
+                      label={{
+                        value: "6h",
+                        fontSize: 10,
+                        fill: "#dc2626",
+                        position: "right",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sleepHours"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="조증 신호 태그 개수">
+                <ResponsiveContainer width="100%" height={150}>
+                  <LineChart
+                    data={data}
+                    margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tickFormatter={shortDate} fontSize={11} />
+                    <YAxis allowDecimals={false} fontSize={11} />
+                    <Tooltip content={<DayTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="manicCount"
+                      stroke="#f97316"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </>
+          )}
+
           <ChartCard title="컨디션 (1=좋음 ~ 5=안좋음)">
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={data} margin={{ top: 10, right: 12, left: -10, bottom: 0 }}>
@@ -156,6 +276,9 @@ type Point = {
   date: string;
   severity: number | null;
   mood: number | null;
+  moodScale: number | null;
+  sleepHours: number | null;
+  manicCount: number | null;
   menstruation: boolean;
   bodyTags: string[];
   moodTags: string[];
@@ -189,6 +312,9 @@ function buildSeries(
         date: dateStr,
         severity: null,
         mood: null,
+        moodScale: null,
+        sleepHours: null,
+        manicCount: null,
         menstruation: false,
         bodyTags: [],
         moodTags: [],
@@ -222,10 +348,39 @@ function buildSeries(
       l.moodTags.forEach((t) => allMood.add(t));
     }
 
+    // 박란하 추가 데이터
+    const moodScales = dayLogs
+      .map((l) => l.moodScale)
+      .filter((n): n is number => typeof n === "number");
+    const avgMoodScale =
+      moodScales.length > 0
+        ? moodScales.reduce((a, b) => a + b, 0) / moodScales.length
+        : null;
+    const sleepValues = dayLogs
+      .map((l) => l.sleepHours)
+      .filter((n): n is number => typeof n === "number");
+    const avgSleep =
+      sleepValues.length > 0
+        ? sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length
+        : null;
+    let manicCount = 0;
+    let hasManic = false;
+    for (const l of dayLogs) {
+      for (const t of l.moodTags) {
+        if (MANIC_TAGS.has(t)) {
+          manicCount += 1;
+          hasManic = true;
+        }
+      }
+    }
+
     data.push({
       date: dateStr,
       severity: avgSeverity,
       mood: hasMood ? mood : null,
+      moodScale: avgMoodScale,
+      sleepHours: avgSleep,
+      manicCount: hasManic ? manicCount : null,
       menstruation: dayLogs.some((l) => !!l.menstruation),
       bodyTags: Array.from(allBody),
       moodTags: Array.from(allMood),
@@ -300,6 +455,24 @@ function DayTooltip({
       {p.severity != null && (
         <div>컨디션: {p.severity.toFixed(1)}</div>
       )}
+      {p.moodScale != null && (
+        <div>
+          조증/우울:{" "}
+          <span
+            className={
+              p.moodScale > 0
+                ? "text-orange-700"
+                : p.moodScale < 0
+                  ? "text-blue-700"
+                  : ""
+            }
+          >
+            {p.moodScale > 0 ? `+${p.moodScale.toFixed(1)}` : p.moodScale.toFixed(1)}
+          </span>
+        </div>
+      )}
+      {p.sleepHours != null && <div>수면: {p.sleepHours.toFixed(1)}h</div>}
+      {p.manicCount != null && <div>조증 신호: {p.manicCount}개</div>}
       {p.mood != null && <div>기분 점수: {p.mood > 0 ? "+" : ""}{p.mood}</div>}
       {p.menstruation && <div className="text-rose-600">생리</div>}
       {p.bodyTags.length > 0 && (

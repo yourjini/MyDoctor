@@ -32,5 +32,30 @@ export const MENSTRUATION_LABEL: Record<string, string> = {
   heavy: "많음",
 };
 
+// 양극성장애 추적용 (박란하 전용으로 폼에서 노출)
+export const MANIC_TAG_GROUP = {
+  label: "조증 신호",
+  tags: [
+    "잠 안옴",
+    "과활동",
+    "말 많아짐",
+    "생각 빠름",
+    "충동구매",
+    "자신감 과잉",
+    "분노 폭발",
+    "짜증·예민",
+  ],
+};
+
+export const MANIC_TAGS = new Set(MANIC_TAG_GROUP.tags);
+
+export const MOOD_SCALE_MARKERS: Record<number, string> = {
+  [-5]: "심한 우울",
+  [-3]: "우울",
+  0: "평온",
+  3: "고양",
+  5: "심한 조증",
+};
+
 export const ALL_BODY_TAGS = BODY_TAG_GROUPS.flatMap((g) => g.tags);
 export const ALL_MOOD_TAGS = MOOD_TAG_GROUPS.flatMap((g) => g.tags);

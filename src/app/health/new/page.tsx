@@ -1,5 +1,4 @@
 import { PageShell } from "@/components/PageShell";
-import { SubjectSelect } from "@/components/SubjectSelect";
 import { TagPicker } from "@/components/TagPicker";
 import {
   BODY_TAG_GROUPS,
@@ -8,6 +7,7 @@ import {
   SEVERITY_LABEL,
 } from "@/lib/health-tags";
 import { createHealthLogAction } from "../actions";
+import { BipolarAwareFields } from "../BipolarFields";
 
 export default async function NewHealthLogPage({
   searchParams,
@@ -35,7 +35,7 @@ export default async function NewHealthLogPage({
             />
           </Field>
           <Field label="대상자" required>
-            <SubjectSelect />
+            <BipolarAwareFields />
           </Field>
         </div>
 

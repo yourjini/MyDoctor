@@ -81,6 +81,9 @@ export type HealthLog = {
   severity?: number; // 1-5 (전체 컨디션, 1=좋음, 5=매우 안좋음)
   menstruation?: MenstruationFlow;
   note?: string;
+  // 양극성장애 추적용 (박란하 전용 입력)
+  moodScale?: number; // -5(우울) ~ 0(평온) ~ +5(조증)
+  sleepHours?: number; // 0~24
   createdAt: string;
   updatedAt: string;
 };
