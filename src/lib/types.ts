@@ -69,4 +69,20 @@ export type Checkup = {
   updatedAt: string;
 };
 
-export type AnyRecord = Visit | Appointment | Checkup;
+export type MenstruationFlow = "light" | "normal" | "heavy";
+
+export type HealthLog = {
+  id: string;
+  kind: "health";
+  date: string; // YYYY-MM-DD
+  subject?: string; // 대상자
+  bodyTags: string[]; // 아픈 위치/증상
+  moodTags: string[]; // 기분/심리
+  severity?: number; // 1-5 (전체 컨디션, 1=좋음, 5=매우 안좋음)
+  menstruation?: MenstruationFlow;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnyRecord = Visit | Appointment | Checkup | HealthLog;

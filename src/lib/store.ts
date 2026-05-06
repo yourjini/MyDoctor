@@ -13,6 +13,7 @@ import type {
   Appointment,
   Attachment,
   Checkup,
+  HealthLog,
   Visit,
 } from "./types";
 
@@ -30,6 +31,10 @@ const checkupFile = (year: string, id: string) =>
   `${checkupDir(year)}/${id}.json`;
 const checkupAttachDir = (year: string, id: string) =>
   `${checkupDir(year)}/${id}-files`;
+
+const healthDir = (year: string) => `data/health/${year}`;
+const healthFile = (year: string, id: string) =>
+  `${healthDir(year)}/${id}.json`;
 
 function yearOf(date: string): string {
   return date.slice(0, 4);
@@ -382,6 +387,72 @@ export async function removeCheckupAttachment(
   } catch (err) {
     throw new Error(`검진 기록 갱신 실패: ${describeError(err)}`);
   }
+}
+
+// ============================================================
+// Health logs
+// ============================================================
+
+export async function listHealthLogs(): Promise<HealthLog[]> {
+  const all = await listAllJSON<HealthLog>("data/health");
+  return all.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+}
+
+export async function getHealthLog(
+  year: string,
+  id: string,
+): Promise<HealthLog | null> {
+  return readJSON<HealthLog>(healthFile(year, id));
+}
+
+export async function createHealthLog(
+  input: Omit<HealthLog, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<HealthLog> {
+  const id = uuid();
+  const year = yearOf(input.date);
+  const now = new Date().toISOString();
+  const log: HealthLog = {
+    id,
+    kind: "health",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(healthFile(year, id), log, `add health log ${input.date}`);
+  } catch (err) {
+    throw new Error(`건강일지 저장 실패: ${describeError(err)}`);
+  }
+  return log;
+}
+
+export async function updateHealthLog(
+  year: string,
+  id: string,
+  patch: Partial<HealthLog>,
+): Promise<HealthLog | null> {
+  const current = await getHealthLog(year, id);
+  if (!current) return null;
+  const next: HealthLog = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "health",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(healthFile(year, id), next, `update health log ${id}`);
+  } catch (err) {
+    throw new Error(`건강일지 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteHealthLog(year: string, id: string): Promise<void> {
+  await deleteFile(healthFile(year, id), `delete health log ${id}`);
 }
 
 // ============================================================

@@ -10,6 +10,7 @@ const links = [
   { href: "/visits", label: "방문이력" },
   { href: "/appointments", label: "예약" },
   { href: "/checkups", label: "건강검진" },
+  { href: "/health", label: "건강일지" },
 ];
 
 export function Nav() {

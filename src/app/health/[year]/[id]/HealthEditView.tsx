@@ -1,0 +1,266 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { SubjectSelect } from "@/components/SubjectSelect";
+import { TagPicker } from "@/components/TagPicker";
+import {
+  BODY_TAG_GROUPS,
+  MENSTRUATION_LABEL,
+  MOOD_TAG_GROUPS,
+  SEVERITY_LABEL,
+} from "@/lib/health-tags";
+import { updateHealthLogAction } from "../../actions";
+import type { HealthLog } from "@/lib/types";
+
+export function HealthEditView({
+  log,
+  year,
+}: {
+  log: HealthLog;
+  year: string;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function cancel() {
+    formRef.current?.reset();
+    setIsEditing(false);
+  }
+
+  if (!isEditing) {
+    return <ReadOnlyView log={log} onEdit={() => setIsEditing(true)} />;
+  }
+
+  return (
+    <form
+      ref={formRef}
+      action={updateHealthLogAction}
+      className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
+    >
+      <input type="hidden" name="id" value={log.id} />
+      <input type="hidden" name="year" value={year} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="날짜">
+          <input
+            type="date"
+            name="date"
+            defaultValue={log.date}
+            required
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="대상자">
+          <SubjectSelect defaultValue={log.subject} />
+        </Field>
+      </div>
+
+      <Field label="컨디션 (전체)">
+        <SeverityRadios defaultValue={log.severity} />
+      </Field>
+
+      <Field label="아픈 곳 / 증상">
+        <TagPicker
+          name="bodyTags"
+          groups={BODY_TAG_GROUPS}
+          defaultValue={log.bodyTags}
+          selectedClass="bg-rose-500 text-white border-rose-500"
+        />
+      </Field>
+
+      <Field label="기분 / 심리">
+        <TagPicker
+          name="moodTags"
+          groups={MOOD_TAG_GROUPS}
+          defaultValue={log.moodTags}
+          selectedClass="bg-indigo-500 text-white border-indigo-500"
+        />
+      </Field>
+
+      <Field label="생리">
+        <MenstruationRadios defaultValue={log.menstruation} />
+      </Field>
+
+      <Field label="메모">
+        <textarea
+          name="note"
+          rows={3}
+          defaultValue={log.note ?? ""}
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        />
+      </Field>
+
+      <div className="flex gap-2 pt-1">
+        <button
+          type="submit"
+          className="rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+        >
+          저장
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          className="rounded-md border bg-background px-4 py-2 text-sm hover:bg-accent"
+        >
+          취소
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
+  return (
+    <div className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
+      <Row label="날짜">{log.date}</Row>
+      <Row label="대상자">{log.subject || "전체"}</Row>
+      {log.severity ? (
+        <Row label="컨디션">
+          {log.severity} · {SEVERITY_LABEL[log.severity]}
+        </Row>
+      ) : null}
+      {log.bodyTags.length > 0 && (
+        <Row label="아픈 곳 / 증상">
+          <TagList tags={log.bodyTags} className="bg-rose-50 text-rose-700" />
+        </Row>
+      )}
+      {log.moodTags.length > 0 && (
+        <Row label="기분 / 심리">
+          <TagList
+            tags={log.moodTags}
+            className="bg-indigo-50 text-indigo-700"
+          />
+        </Row>
+      )}
+      {log.menstruation && (
+        <Row label="생리">{MENSTRUATION_LABEL[log.menstruation]}</Row>
+      )}
+      {log.note && (
+        <Row label="메모">
+          <p className="whitespace-pre-wrap">{log.note}</p>
+        </Row>
+      )}
+
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+        >
+          수정하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[6rem_1fr] gap-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function TagList({ tags, className }: { tags: string[]; className: string }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map((t) => (
+        <span
+          key={t}
+          className={`rounded-full px-2 py-0.5 text-xs ${className}`}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function SeverityRadios({ defaultValue }: { defaultValue?: number }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <RadioPill name="severity" value="" label="—" defaultChecked={!defaultValue} />
+      {[1, 2, 3, 4, 5].map((n) => (
+        <RadioPill
+          key={n}
+          name="severity"
+          value={String(n)}
+          label={`${n} ${SEVERITY_LABEL[n]}`}
+          defaultChecked={defaultValue === n}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MenstruationRadios({ defaultValue }: { defaultValue?: string }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <RadioPill
+        name="menstruation"
+        value=""
+        label="해당없음"
+        defaultChecked={!defaultValue}
+      />
+      {(["light", "normal", "heavy"] as const).map((v) => (
+        <RadioPill
+          key={v}
+          name="menstruation"
+          value={v}
+          label={MENSTRUATION_LABEL[v]}
+          defaultChecked={defaultValue === v}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RadioPill({
+  name,
+  value,
+  label,
+  defaultChecked,
+}: {
+  name: string;
+  value: string;
+  label: string;
+  defaultChecked?: boolean;
+}) {
+  return (
+    <label className="cursor-pointer">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        defaultChecked={defaultChecked}
+        className="peer sr-only"
+      />
+      <span className="inline-block rounded-full border bg-background px-3 py-1 text-xs text-foreground hover:bg-accent peer-checked:border-rose-500 peer-checked:bg-rose-500 peer-checked:text-white">
+        {label}
+      </span>
+    </label>
+  );
+}

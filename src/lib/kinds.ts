@@ -1,9 +1,10 @@
-export type RecordKind = "visit" | "appointment" | "checkup";
+export type RecordKind = "visit" | "appointment" | "checkup" | "health";
 
 export const KIND_LABEL: Record<RecordKind, string> = {
   visit: "방문이력",
   appointment: "예약",
   checkup: "건강검진",
+  health: "건강일지",
 };
 
 export type KindStyle = {
@@ -31,5 +32,10 @@ export const KIND_STYLES: Record<RecordKind, KindStyle> = {
     chip: "bg-violet-100 text-violet-900 border-violet-200",
     solid: "bg-violet-600 text-white hover:bg-violet-700",
     dot: "bg-violet-500",
+  },
+  health: {
+    chip: "bg-rose-100 text-rose-900 border-rose-200",
+    solid: "bg-rose-500 text-white hover:bg-rose-600",
+    dot: "bg-rose-500",
   },
 };
