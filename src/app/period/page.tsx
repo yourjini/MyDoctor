@@ -7,16 +7,19 @@ import { MENSTRUATION_LABEL } from "@/lib/health-tags";
 import { cn, formatDate, todayKST } from "@/lib/utils";
 import { PeriodSubjectFilter } from "./PeriodSubjectFilter";
 import { startTodayAction, endTodayAction } from "./actions";
+import type { MenstrualCycle } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 const PERIOD_SUBJECTS = ["박란하", "최진희"] as const;
+const FILTER_OPTIONS = ["전체", ...PERIOD_SUBJECTS] as const;
 type PeriodSubject = (typeof PERIOD_SUBJECTS)[number];
+type FilterValue = (typeof FILTER_OPTIONS)[number];
 
-function isPeriodSubject(value: unknown): value is PeriodSubject {
+function isFilter(value: unknown): value is FilterValue {
   return (
     typeof value === "string" &&
-    (PERIOD_SUBJECTS as readonly string[]).includes(value)
+    (FILTER_OPTIONS as readonly string[]).includes(value)
   );
 }
 
@@ -26,37 +29,193 @@ export default async function PeriodPage({
   searchParams: Promise<{ subject?: string }>;
 }) {
   const sp = await searchParams;
-  const subject: PeriodSubject = isPeriodSubject(sp.subject)
-    ? sp.subject
-    : "최진희";
+  const filter: FilterValue = isFilter(sp.subject) ? sp.subject : "전체";
 
   const all = await listMenstrualCycles();
-  const cycles = all.filter((c) => c.subject === subject);
-  const stats = computePeriodStats(all, subject);
-  const ongoing = cycles.find((c) => !c.endDate);
-  const today = todayKST().key;
-  const colors = PERSON_COLORS[subject];
+  const visible =
+    filter === "전체"
+      ? all.filter((c) =>
+          (PERIOD_SUBJECTS as readonly string[]).includes(c.subject),
+        )
+      : all.filter((c) => c.subject === filter);
 
   return (
     <PageShell
       title="생리주기"
       action={
         <Link
-          href="/period/new"
-          className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium",
-            colors.pillActive,
-          )}
+          href={`/period/new${filter !== "전체" ? `?subject=${encodeURIComponent(filter)}` : ""}`}
+          className="rounded-md bg-rose-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-600"
         >
           + 수동 입력
         </Link>
       }
     >
       <div className="mb-4">
-        <PeriodSubjectFilter current={subject} subjects={PERIOD_SUBJECTS} />
+        <PeriodSubjectFilter current={filter} subjects={FILTER_OPTIONS} />
       </div>
 
-      {/* 활성 사이클 또는 시작 버튼 */}
+      {filter === "전체" ? (
+        <CombinedView all={all} />
+      ) : (
+        <SingleSubjectView subject={filter} all={all} cycles={visible} />
+      )}
+    </PageShell>
+  );
+}
+
+// ============================================================
+// 전체 탭: 두 사람 카드 나란히 + 합쳐진 기록 리스트
+// ============================================================
+
+function CombinedView({ all }: { all: MenstrualCycle[] }) {
+  return (
+    <div className="space-y-5">
+      <section className="grid gap-3 sm:grid-cols-2">
+        {PERIOD_SUBJECTS.map((subj) => (
+          <SubjectSummaryCard key={subj} subject={subj} all={all} />
+        ))}
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+          전체 기록
+        </h2>
+        <CombinedList
+          cycles={all
+            .filter((c) =>
+              (PERIOD_SUBJECTS as readonly string[]).includes(c.subject),
+            )
+            .slice()
+            .sort((a, b) => b.startDate.localeCompare(a.startDate))}
+          showSubject
+        />
+      </section>
+    </div>
+  );
+}
+
+function SubjectSummaryCard({
+  subject,
+  all,
+}: {
+  subject: PeriodSubject;
+  all: MenstrualCycle[];
+}) {
+  const cycles = all.filter((c) => c.subject === subject);
+  const ongoing = cycles.find((c) => !c.endDate);
+  const stats = computePeriodStats(all, subject);
+  const today = todayKST().key;
+  const colors = PERSON_COLORS[subject];
+
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <Link
+          href={`/period?subject=${encodeURIComponent(subject)}`}
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-xs font-medium",
+            colors.pillActive,
+          )}
+        >
+          {subject}
+        </Link>
+        <Link
+          href={`/period?subject=${encodeURIComponent(subject)}`}
+          className="text-xs text-muted-foreground hover:underline"
+        >
+          상세 →
+        </Link>
+      </div>
+
+      {ongoing ? (
+        <div className="space-y-2">
+          <div>
+            <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-medium text-white">
+              진행 중
+            </span>
+            <div className="mt-1 text-sm">
+              {ongoing.startDate} 시작 ·{" "}
+              <span className="font-medium">
+                {daysBetween(ongoing.startDate, today) + 1}일째
+              </span>
+            </div>
+          </div>
+          <form action={endTodayAction}>
+            <input type="hidden" name="id" value={ongoing.id} />
+            <input
+              type="hidden"
+              name="year"
+              value={ongoing.startDate.slice(0, 4)}
+            />
+            <button
+              type="submit"
+              className="w-full rounded-md bg-rose-500 px-3 py-2 text-sm font-medium text-white hover:bg-rose-600"
+            >
+              오늘 종료
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {stats.nextExpected ? (
+            <div className="text-sm">
+              {expectedRelative(today, stats.nextExpected)}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              아직 기록 없음
+            </div>
+          )}
+          <form action={startTodayAction}>
+            <input type="hidden" name="subject" value={subject} />
+            <button
+              type="submit"
+              className="w-full rounded-md bg-rose-500 px-3 py-2 text-sm font-medium text-white hover:bg-rose-600"
+            >
+              오늘 시작
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-center">
+        <Stat
+          label="기록"
+          value={stats.count > 0 ? `${stats.count}회` : "—"}
+        />
+        <Stat
+          label="평균주기"
+          value={stats.avgCycleDays ? `${stats.avgCycleDays}일` : "—"}
+        />
+        <Stat
+          label="평균기간"
+          value={stats.avgPeriodDays ? `${stats.avgPeriodDays}일` : "—"}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 개인 탭: 기존 단일 대상자 뷰
+// ============================================================
+
+function SingleSubjectView({
+  subject,
+  all,
+  cycles,
+}: {
+  subject: PeriodSubject;
+  all: MenstrualCycle[];
+  cycles: MenstrualCycle[];
+}) {
+  const stats = computePeriodStats(all, subject);
+  const ongoing = cycles.find((c) => !c.endDate);
+  const today = todayKST().key;
+
+  return (
+    <>
       <section className="mb-5 rounded-lg border bg-card p-4">
         {ongoing ? (
           <OngoingCard cycle={ongoing} today={today} />
@@ -65,14 +224,9 @@ export default async function PeriodPage({
         )}
       </section>
 
-      {/* 통계 */}
       {stats.count > 0 && (
         <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatBox
-            label="기록 수"
-            value={`${stats.count}`}
-            unit="회"
-          />
+          <StatBox label="기록 수" value={`${stats.count}`} unit="회" />
           <StatBox
             label="평균 주기"
             value={stats.avgCycleDays ? `${stats.avgCycleDays}` : "—"}
@@ -92,62 +246,84 @@ export default async function PeriodPage({
         </section>
       )}
 
-      {/* 사이클 리스트 */}
       <section>
         <h2 className="mb-2 text-sm font-medium text-muted-foreground">
           전체 기록
         </h2>
-        {cycles.length === 0 ? (
-          <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-            아직 기록이 없습니다.
-          </p>
-        ) : (
-          <ul className="rounded-lg border bg-card divide-y">
-            {cycles.map((c) => {
-              const year = c.startDate.slice(0, 4);
-              const days = c.endDate
-                ? daysBetween(c.startDate, c.endDate) + 1
-                : null;
-              return (
-                <li key={c.id}>
-                  <Link
-                    href={`/period/${year}/${c.id}`}
-                    className="flex items-center justify-between gap-3 p-4 hover:bg-accent/40"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm">
-                        {c.startDate}
-                        {c.endDate && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            ~ {c.endDate}
-                          </span>
-                        )}
-                        {!c.endDate && (
-                          <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] text-rose-900">
-                            진행 중
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-                        {days != null && <span>{days}일</span>}
-                        {c.flow && (
-                          <span>·  {MENSTRUATION_LABEL[c.flow]}</span>
-                        )}
-                        {c.notes && (
-                          <span className="truncate">· {c.notes}</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-muted-foreground">›</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <CombinedList cycles={cycles} />
       </section>
-    </PageShell>
+    </>
+  );
+}
+
+function CombinedList({
+  cycles,
+  showSubject = false,
+}: {
+  cycles: MenstrualCycle[];
+  showSubject?: boolean;
+}) {
+  if (cycles.length === 0) {
+    return (
+      <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+        아직 기록이 없습니다.
+      </p>
+    );
+  }
+  return (
+    <ul className="rounded-lg border bg-card divide-y">
+      {cycles.map((c) => {
+        const year = c.startDate.slice(0, 4);
+        const days = c.endDate ? daysBetween(c.startDate, c.endDate) + 1 : null;
+        const colors =
+          (PERSON_COLORS[
+            c.subject as keyof typeof PERSON_COLORS
+          ]) ?? PERSON_COLORS["전체"];
+        return (
+          <li key={c.id}>
+            <Link
+              href={`/period/${year}/${c.id}`}
+              className="flex items-center justify-between gap-3 p-4 hover:bg-accent/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  {showSubject && (
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                        colors.pillActive,
+                      )}
+                    >
+                      {c.subject}
+                    </span>
+                  )}
+                  <span>
+                    {c.startDate}
+                    {c.endDate && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        ~ {c.endDate}
+                      </span>
+                    )}
+                  </span>
+                  {!c.endDate && (
+                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] text-rose-900">
+                      진행 중
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                  {days != null && <span>{days}일</span>}
+                  {c.flow && <span>· {MENSTRUATION_LABEL[c.flow]}</span>}
+                  {c.notes && <span className="truncate">· {c.notes}</span>}
+                </div>
+              </div>
+              <span className="text-muted-foreground">›</span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -244,6 +420,15 @@ function StatBox({
         {value}
         {unit && <span className="ml-1 text-sm font-normal">{unit}</span>}
       </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className="text-sm font-medium">{value}</div>
     </div>
   );
 }

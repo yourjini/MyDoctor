@@ -19,8 +19,10 @@ export function PeriodSubjectFilter({
 
   function select(s: string) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("subject", s);
-    startTransition(() => router.push(`${pathname}?${params.toString()}`));
+    if (s === "전체") params.delete("subject");
+    else params.set("subject", s);
+    const qs = params.toString();
+    startTransition(() => router.push(qs ? `${pathname}?${qs}` : pathname));
   }
 
   return (
