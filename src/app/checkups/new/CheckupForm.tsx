@@ -1,99 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { SubjectSelect } from "@/components/SubjectSelect";
-import { isPdf, pdfToImages } from "@/lib/pdf-to-images";
 import { createCheckupAction } from "../actions";
-
-type Extracted = {
-  date: string;
-  title: string;
-  hospitalName: string;
-  summary: string;
-  symptoms: string;
-  doctorOpinion: string;
-};
 
 export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
   const today = initialDate ?? new Date().toISOString().slice(0, 10);
-  const [extracting, setExtracting] = useState(false);
-  const [extractError, setExtractError] = useState<string | null>(null);
-  const [extracted, setExtracted] = useState<Extracted | null>(null);
-  const [files, setFiles] = useState<File[]>([]);
-  const [progress, setProgress] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  const handleFiles = useCallback((next: File[]) => {
-    setFiles(next);
-    setExtracted(null);
-  }, []);
-
-  async function handleExtract() {
-    if (files.length === 0) {
-      setExtractError("먼저 PDF 또는 이미지를 선택해주세요");
-      return;
-    }
-    setExtracting(true);
-    setExtractError(null);
-    setProgress(null);
-    try {
-      // PDF는 페이지별 JPEG로 클라이언트에서 변환 (Vercel 4.5MB body 제한 회피).
-      // 원본 PDF는 files state에 그대로 남아 저장 시 첨부로 업로드됨.
-      const fd = new FormData();
-      const truncationMessages: string[] = [];
-      for (const f of files) {
-        if (isPdf(f)) {
-          setProgress(`${f.name} 변환 준비 중…`);
-          const result = await pdfToImages(f, {
-            onProgress: (rendered, total, bytes) => {
-              setProgress(
-                `${f.name} ${rendered}/${total}페이지 (${formatBytes(bytes)})`,
-              );
-            },
-          });
-          for (const img of result.files) fd.append("files", img);
-          if (result.truncated) {
-            truncationMessages.push(
-              `${f.name}: 전체 ${result.totalPages}페이지 중 ${result.renderedPages}페이지만 분석 (용량 한도). 첨부는 원본 그대로 저장됩니다.`,
-            );
-          }
-        } else {
-          fd.append("files", f);
-        }
-      }
-      setProgress("AI 분석 요청 중…");
-      const res = await fetch("/api/checkups/extract", {
-        method: "POST",
-        body: fd,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 413) {
-          throw new Error(
-            "분석 요청 용량 초과. PDF 페이지 수가 너무 많거나 해상도가 높습니다.",
-          );
-        }
-        throw new Error(data.error || `${res.status}`);
-      }
-      const data = (await res.json()) as Extracted;
-      setExtracted(data);
-      if (truncationMessages.length > 0) {
-        setExtractError(truncationMessages.join("\n"));
-      }
-    } catch (err: unknown) {
-      setExtractError(err instanceof Error ? err.message : "추출 실패");
-    } finally {
-      setExtracting(false);
-      setProgress(null);
-    }
-  }
-
-  function formatBytes(n: number): string {
-    if (n < 1024) return `${n}B`;
-    if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)}KB`;
-    return `${(n / 1024 / 1024).toFixed(1)}MB`;
-  }
 
   return (
     <form
@@ -106,43 +20,11 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <label className="mb-1 block text-sm font-medium">
           검진 결과 파일 (PDF / 이미지)
         </label>
-        <FilePicker name="files" onChange={handleFiles} />
+        <FilePicker name="files" />
         <p className="mt-1 text-xs text-muted-foreground">
           여러 페이지 결과지면 모두 선택하세요. 업로드한 원본 파일은 검진
           기록과 함께 저장됩니다.
         </p>
-      </div>
-
-      <div className="rounded-md border border-dashed bg-accent/30 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-sm">
-            <div className="font-medium">AI 자동 요약</div>
-            <div className="text-xs text-muted-foreground">
-              파일을 분석해 검진일, 병원, 요약, 이상 소견을 자동으로 채웁니다.
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleExtract}
-            disabled={extracting || files.length === 0}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {extracting ? "분석 중..." : "AI 분석"}
-          </button>
-        </div>
-        {progress && (
-          <p className="mt-2 text-xs text-muted-foreground">{progress}</p>
-        )}
-        {extractError && (
-          <p className="mt-2 whitespace-pre-line text-sm text-destructive">
-            {extractError}
-          </p>
-        )}
-        {extracted && !extractError && (
-          <p className="mt-2 text-xs text-emerald-700">
-            ✓ 분석 완료 — 아래 항목이 채워졌습니다. 자유롭게 수정하세요.
-          </p>
-        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -151,8 +33,7 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
             type="date"
             name="date"
             required
-            defaultValue={extracted?.date || today}
-            key={`date-${extracted?.date ?? ""}`}
+            defaultValue={today}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
@@ -166,8 +47,6 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
           name="title"
           required
           placeholder="예: 2026 종합건강검진"
-          defaultValue={extracted?.title || ""}
-          key={`title-${extracted?.title ?? ""}`}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
@@ -175,8 +54,6 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
       <Field label="병원/검진센터">
         <input
           name="hospitalName"
-          defaultValue={extracted?.hospitalName || ""}
-          key={`hosp-${extracted?.hospitalName ?? ""}`}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
@@ -185,8 +62,6 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <textarea
           name="summary"
           rows={6}
-          defaultValue={extracted?.summary || ""}
-          key={`sum-${extracted?.summary ?? ""}`}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
@@ -195,8 +70,6 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <textarea
           name="symptoms"
           rows={4}
-          defaultValue={extracted?.symptoms || ""}
-          key={`sym-${extracted?.symptoms ?? ""}`}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
@@ -205,8 +78,6 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <textarea
           name="doctorOpinion"
           rows={3}
-          defaultValue={extracted?.doctorOpinion || ""}
-          key={`opi-${extracted?.doctorOpinion ?? ""}`}
           placeholder="문서의 의사소견 + 직접 들은 추가 설명도 함께"
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
