@@ -35,3 +35,15 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+# secrets / scratch
+.claude/
+클로드apikey/
+*.png
+*.jpg
+*.jpeg
+*.gif
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.gif

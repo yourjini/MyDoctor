@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  name: string;
+  // FormData에 같이 제출하려면 이름 부여. 비우면 hidden input이 제출되지 않음
+  // (Blob 업로드처럼 폼 액션 외부에서 따로 처리할 때).
+  name?: string;
   accept?: string;
   multiple?: boolean;
   onChange?: (files: File[]) => void;
   className?: string;
-  // 사용자가 파일을 추가할 때 가공 (PDF → JPEG 변환 등). 비동기 가능.
-  // 진행 중에는 picker가 disabled되고 progressLabel이 표시됨.
+  disabled?: boolean;
   transformOnAdd?: (
     incoming: File[],
     setProgress: (label: string | null) => void,
@@ -23,6 +24,7 @@ export function FilePicker({
   multiple = true,
   onChange,
   className,
+  disabled,
   transformOnAdd,
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
@@ -115,7 +117,7 @@ export function FilePicker({
       <input
         ref={hiddenRef}
         type="file"
-        name={name}
+        {...(name ? { name } : {})}
         multiple={multiple}
         accept={accept}
         className="hidden"
@@ -127,7 +129,7 @@ export function FilePicker({
         <button
           type="button"
           onClick={() => visibleRef.current?.click()}
-          disabled={busy}
+          disabled={busy || disabled}
           className="rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent disabled:cursor-wait disabled:opacity-60"
         >
           + 파일 선택

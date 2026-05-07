@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
     "@octokit/rest": "^21.1.1",
+    "@vercel/blob": "^2.3.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "heic-convert": "^2.1.0",
