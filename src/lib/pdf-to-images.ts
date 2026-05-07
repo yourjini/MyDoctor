@@ -17,23 +17,43 @@ async function loadPdfjs(): Promise<PdfJsModule> {
 }
 
 export type PdfRenderOptions = {
-  maxPages?: number; // 너무 긴 PDF 방어
-  scale?: number; // 1.5 ≈ 144 DPI, 2.0 ≈ 192 DPI
+  maxPages?: number;
+  scale?: number; // 1.2 ≈ 115 DPI, 1.5 ≈ 144 DPI
   quality?: number; // 0~1 JPEG quality
+  maxTotalBytes?: number; // 누적 용량 한도 (Vercel 4.5MB body 제한 회피)
+  onProgress?: (rendered: number, total: number, totalBytes: number) => void;
+};
+
+export type PdfRenderResult = {
+  files: File[];
+  truncated: boolean; // 페이지 수 또는 용량 한도로 잘렸는지
+  totalPages: number; // 원본 PDF 페이지 수
+  renderedPages: number; // 실제 변환된 페이지 수
+  totalBytes: number;
 };
 
 export async function pdfToImages(
   file: File,
   options: PdfRenderOptions = {},
-): Promise<File[]> {
-  const { maxPages = 20, scale = 1.5, quality = 0.75 } = options;
+): Promise<PdfRenderResult> {
+  const {
+    maxPages = 25,
+    scale = 1.2,
+    quality = 0.7,
+    maxTotalBytes = 3.8 * 1024 * 1024, // 4.5MB 한도에 multipart 오버헤드 여유
+    onProgress,
+  } = options;
   const pdfjs = await loadPdfjs();
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-  const pageCount = Math.min(pdf.numPages, maxPages);
+  const totalPages = pdf.numPages;
+  const pageCount = Math.min(totalPages, maxPages);
   const baseName = file.name.replace(/\.pdf$/i, "");
 
   const out: File[] = [];
+  let totalBytes = 0;
+  let truncated = totalPages > maxPages;
+
   for (let i = 1; i <= pageCount; i++) {
     const page = await pdf.getPage(i);
     const viewport = page.getViewport({ scale });
@@ -50,15 +70,31 @@ export async function pdfToImages(
         quality,
       ),
     );
+
+    if (totalBytes + blob.size > maxTotalBytes && out.length > 0) {
+      truncated = true;
+      page.cleanup();
+      break;
+    }
+
     out.push(
       new File([blob], `${baseName}-page${String(i).padStart(2, "0")}.jpg`, {
         type: "image/jpeg",
       }),
     );
+    totalBytes += blob.size;
     page.cleanup();
+    onProgress?.(out.length, pageCount, totalBytes);
   }
   await pdf.cleanup();
-  return out;
+
+  return {
+    files: out,
+    truncated,
+    totalPages,
+    renderedPages: out.length,
+    totalBytes,
+  };
 }
 
 export function isPdf(file: File): boolean {

@@ -21,6 +21,7 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extracted, setExtracted] = useState<Extracted | null>(null);
   const [files, setFiles] = useState<File[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleFiles = useCallback((next: File[]) => {
@@ -35,18 +36,33 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
     }
     setExtracting(true);
     setExtractError(null);
+    setProgress(null);
     try {
       // PDF는 페이지별 JPEG로 클라이언트에서 변환 (Vercel 4.5MB body 제한 회피).
       // 원본 PDF는 files state에 그대로 남아 저장 시 첨부로 업로드됨.
       const fd = new FormData();
+      const truncationMessages: string[] = [];
       for (const f of files) {
         if (isPdf(f)) {
-          const imgs = await pdfToImages(f);
-          for (const img of imgs) fd.append("files", img);
+          setProgress(`${f.name} 변환 준비 중…`);
+          const result = await pdfToImages(f, {
+            onProgress: (rendered, total, bytes) => {
+              setProgress(
+                `${f.name} ${rendered}/${total}페이지 (${formatBytes(bytes)})`,
+              );
+            },
+          });
+          for (const img of result.files) fd.append("files", img);
+          if (result.truncated) {
+            truncationMessages.push(
+              `${f.name}: 전체 ${result.totalPages}페이지 중 ${result.renderedPages}페이지만 분석 (용량 한도). 첨부는 원본 그대로 저장됩니다.`,
+            );
+          }
         } else {
           fd.append("files", f);
         }
       }
+      setProgress("AI 분석 요청 중…");
       const res = await fetch("/api/checkups/extract", {
         method: "POST",
         body: fd,
@@ -62,11 +78,21 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
       }
       const data = (await res.json()) as Extracted;
       setExtracted(data);
+      if (truncationMessages.length > 0) {
+        setExtractError(truncationMessages.join("\n"));
+      }
     } catch (err: unknown) {
       setExtractError(err instanceof Error ? err.message : "추출 실패");
     } finally {
       setExtracting(false);
+      setProgress(null);
     }
+  }
+
+  function formatBytes(n: number): string {
+    if (n < 1024) return `${n}B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)}KB`;
+    return `${(n / 1024 / 1024).toFixed(1)}MB`;
   }
 
   return (
@@ -104,10 +130,15 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
             {extracting ? "분석 중..." : "AI 분석"}
           </button>
         </div>
-        {extractError && (
-          <p className="mt-2 text-sm text-destructive">{extractError}</p>
+        {progress && (
+          <p className="mt-2 text-xs text-muted-foreground">{progress}</p>
         )}
-        {extracted && (
+        {extractError && (
+          <p className="mt-2 whitespace-pre-line text-sm text-destructive">
+            {extractError}
+          </p>
+        )}
+        {extracted && !extractError && (
           <p className="mt-2 text-xs text-emerald-700">
             ✓ 분석 완료 — 아래 항목이 채워졌습니다. 자유롭게 수정하세요.
           </p>
