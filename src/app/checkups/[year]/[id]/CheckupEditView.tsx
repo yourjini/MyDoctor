@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FilePicker } from "@/components/FilePicker";
+import { maybeConvertLargePdfs } from "../../fileTransform";
 import { SubjectSelect } from "@/components/SubjectSelect";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
 import { AttachmentGallery } from "@/components/AttachmentGallery";
@@ -110,7 +111,7 @@ export function CheckupEditView({
             <label className="mb-1 block text-sm font-medium">
               원본 파일 추가
             </label>
-            <FilePicker name="files" />
+            <FilePicker name="files" transformOnAdd={maybeConvertLargePdfs} />
           </div>
         </fieldset>
 

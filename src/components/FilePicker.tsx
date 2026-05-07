@@ -9,6 +9,12 @@ type Props = {
   multiple?: boolean;
   onChange?: (files: File[]) => void;
   className?: string;
+  // 사용자가 파일을 추가할 때 가공 (PDF → JPEG 변환 등). 비동기 가능.
+  // 진행 중에는 picker가 disabled되고 progressLabel이 표시됨.
+  transformOnAdd?: (
+    incoming: File[],
+    setProgress: (label: string | null) => void,
+  ) => Promise<File[]>;
 };
 
 export function FilePicker({
@@ -17,9 +23,12 @@ export function FilePicker({
   multiple = true,
   onChange,
   className,
+  transformOnAdd,
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<Map<File, string>>(new Map());
+  const [busy, setBusy] = useState(false);
+  const [progressLabel, setProgressLabel] = useState<string | null>(null);
   const hiddenRef = useRef<HTMLInputElement>(null);
   const visibleRef = useRef<HTMLInputElement>(null);
   const filesRef = useRef<File[]>([]);
@@ -68,9 +77,23 @@ export function FilePicker({
     onChange?.(files);
   }, [files, onChange]);
 
-  function addFiles(list: FileList | null) {
+  async function addFiles(list: FileList | null) {
     if (!list) return;
-    const incoming = Array.from(list);
+    let incoming = Array.from(list);
+    if (transformOnAdd && incoming.length > 0) {
+      setBusy(true);
+      try {
+        incoming = await transformOnAdd(incoming, setProgressLabel);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setProgressLabel(`변환 실패: ${msg}`);
+        setBusy(false);
+        if (visibleRef.current) visibleRef.current.value = "";
+        return;
+      }
+      setBusy(false);
+      setProgressLabel(null);
+    }
     setFiles((prev) => {
       if (!multiple) return incoming.slice(0, 1);
       const seen = new Set(prev.map(keyOf));
@@ -104,14 +127,17 @@ export function FilePicker({
         <button
           type="button"
           onClick={() => visibleRef.current?.click()}
-          className="rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+          disabled={busy}
+          className="rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent disabled:cursor-wait disabled:opacity-60"
         >
           + 파일 선택
         </button>
         <span className="text-xs text-muted-foreground">
-          {files.length > 0
-            ? `${files.length}개 파일 선택됨`
-            : "이미지 또는 PDF"}
+          {busy
+            ? progressLabel || "처리 중…"
+            : files.length > 0
+              ? `${files.length}개 파일 선택됨`
+              : "이미지 또는 PDF"}
         </span>
         <input
           ref={visibleRef}

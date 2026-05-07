@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { FilePicker } from "@/components/FilePicker";
 import { SubjectSelect } from "@/components/SubjectSelect";
 import { createCheckupAction } from "../actions";
+import { maybeConvertLargePdfs } from "../fileTransform";
 
 export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
   const today = initialDate ?? new Date().toISOString().slice(0, 10);
@@ -20,10 +21,10 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         <label className="mb-1 block text-sm font-medium">
           검진 결과 파일 (PDF / 이미지)
         </label>
-        <FilePicker name="files" />
+        <FilePicker name="files" transformOnAdd={maybeConvertLargePdfs} />
         <p className="mt-1 text-xs text-muted-foreground">
-          여러 페이지 결과지면 모두 선택하세요. 업로드한 원본 파일은 검진
-          기록과 함께 저장됩니다.
+          여러 페이지 결과지면 모두 선택하세요. 3MB 이상 PDF는 페이지별 이미지로 자동
+          변환되어 저장됩니다 (서버 업로드 한도 회피).
         </p>
       </div>
 
