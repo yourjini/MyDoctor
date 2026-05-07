@@ -89,4 +89,21 @@ export type HealthLog = {
   updatedAt: string;
 };
 
-export type AnyRecord = Visit | Appointment | Checkup | HealthLog;
+export type MenstrualCycle = {
+  id: string;
+  kind: "period";
+  subject: string; // 박란하 or 최진희 (지금 생리 추적 대상)
+  startDate: string; // YYYY-MM-DD
+  endDate?: string; // 비어있으면 진행 중
+  flow?: MenstruationFlow;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnyRecord =
+  | Visit
+  | Appointment
+  | Checkup
+  | HealthLog
+  | MenstrualCycle;

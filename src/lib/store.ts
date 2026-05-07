@@ -14,6 +14,7 @@ import type {
   Attachment,
   Checkup,
   HealthLog,
+  MenstrualCycle,
   Visit,
 } from "./types";
 
@@ -35,6 +36,10 @@ const checkupAttachDir = (year: string, id: string) =>
 const healthDir = (year: string) => `data/health/${year}`;
 const healthFile = (year: string, id: string) =>
   `${healthDir(year)}/${id}.json`;
+
+const periodDir = (year: string) => `data/period/${year}`;
+const periodFile = (year: string, id: string) =>
+  `${periodDir(year)}/${id}.json`;
 
 function yearOf(date: string): string {
   return date.slice(0, 4);
@@ -456,6 +461,76 @@ export async function updateHealthLog(
 
 export async function deleteHealthLog(year: string, id: string): Promise<void> {
   await deleteFile(healthFile(year, id), `delete health log ${id}`);
+}
+
+// ============================================================
+// Menstrual cycles
+// ============================================================
+
+export async function listMenstrualCycles(): Promise<MenstrualCycle[]> {
+  const all = await listAllJSON<MenstrualCycle>("data/period");
+  return all.sort((a, b) => b.startDate.localeCompare(a.startDate));
+}
+
+export async function getMenstrualCycle(
+  year: string,
+  id: string,
+): Promise<MenstrualCycle | null> {
+  return readJSON<MenstrualCycle>(periodFile(year, id));
+}
+
+export async function createMenstrualCycle(
+  input: Omit<MenstrualCycle, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<MenstrualCycle> {
+  const id = uuid();
+  const year = yearOf(input.startDate);
+  const now = new Date().toISOString();
+  const cycle: MenstrualCycle = {
+    id,
+    kind: "period",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(
+      periodFile(year, id),
+      cycle,
+      `add period cycle ${input.subject} ${input.startDate}`,
+    );
+  } catch (err) {
+    throw new Error(`생리주기 저장 실패: ${describeError(err)}`);
+  }
+  return cycle;
+}
+
+export async function updateMenstrualCycle(
+  year: string,
+  id: string,
+  patch: Partial<MenstrualCycle>,
+): Promise<MenstrualCycle | null> {
+  const current = await getMenstrualCycle(year, id);
+  if (!current) return null;
+  const next: MenstrualCycle = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "period",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(periodFile(year, id), next, `update period cycle ${id}`);
+  } catch (err) {
+    throw new Error(`생리주기 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteMenstrualCycle(
+  year: string,
+  id: string,
+): Promise<void> {
+  await deleteFile(periodFile(year, id), `delete period cycle ${id}`);
 }
 
 // ============================================================

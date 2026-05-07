@@ -11,6 +11,7 @@ const links = [
   { href: "/appointments", label: "예약" },
   { href: "/checkups", label: "건강검진" },
   { href: "/health", label: "건강일지" },
+  { href: "/period", label: "생리주기" },
 ];
 
 export function Nav() {
