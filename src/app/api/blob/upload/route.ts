@@ -18,6 +18,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("[blob/upload] BLOB_READ_WRITE_TOKEN is not set");
+    return NextResponse.json(
+      {
+        error:
+          "BLOB_READ_WRITE_TOKEN 환경변수가 설정되지 않음. Vercel Storage에서 Blob 스토어 연결 후 재배포 필요.",
+      },
+      { status: 500 },
+    );
+  }
+
   const body = (await request.json()) as HandleUploadBody;
 
   try {
@@ -34,17 +45,17 @@ export async function POST(request: Request): Promise<NextResponse> {
           "image/webp",
           "image/gif",
         ],
-        // 100MB 정도면 종합검진 PDF 충분 (Blob 자체는 더 큰 것도 가능)
         maximumSizeInBytes: 100 * 1024 * 1024,
         addRandomSuffix: true,
         tokenPayload: JSON.stringify({}),
       }),
       onUploadCompleted: async () => {
-        // 서버가 GitHub로 옮긴 뒤 직접 del() 호출하므로 여기는 비워둠
+        // 서버가 GitHub로 옮긴 뒤 del()로 정리하므로 여기는 비움
       },
     });
     return NextResponse.json(jsonResponse);
   } catch (err) {
+    console.error("[blob/upload] handleUpload error:", err);
     const msg = err instanceof Error ? err.message : "blob upload error";
     return NextResponse.json({ error: msg }, { status: 400 });
   }

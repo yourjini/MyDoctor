@@ -50,7 +50,7 @@ export default async function CheckupsPage({
       {all.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           {everything.length === 0
-            ? "검진 기록이 없습니다. PDF나 이미지를 업로드하면 자동 요약이 됩니다."
+            ? "검진 기록이 없습니다. 위에서 새 검진 기록을 추가해보세요."
             : "선택된 대상자의 검진 기록이 없습니다."}
         </p>
       ) : (
