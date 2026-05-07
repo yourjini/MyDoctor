@@ -45,11 +45,25 @@ export async function GET(
                 : "application/octet-stream";
   }
 
+  const url = new URL(_req.url);
+  const isDownload = url.searchParams.get("download") === "1";
+  const filenameParam = url.searchParams.get("filename");
+  const fallbackName = path.split("/").pop() || "file";
+  const downloadName = filenameParam || fallbackName;
+
+  const headers: Record<string, string> = {
+    "Content-Type": ct,
+    "Cache-Control": "private, max-age=3600",
+  };
+  if (isDownload) {
+    // RFC 5987 — encode UTF-8 filename for non-ASCII (한글 등)
+    const encoded = encodeURIComponent(downloadName);
+    headers["Content-Disposition"] = `attachment; filename*=UTF-8''${encoded}`;
+  } else {
+    const encoded = encodeURIComponent(downloadName);
+    headers["Content-Disposition"] = `inline; filename*=UTF-8''${encoded}`;
+  }
+
   const body = new Uint8Array(buf);
-  return new NextResponse(body, {
-    headers: {
-      "Content-Type": ct,
-      "Cache-Control": "private, max-age=3600",
-    },
-  });
+  return new NextResponse(body, { headers });
 }

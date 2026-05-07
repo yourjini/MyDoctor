@@ -10,8 +10,23 @@ type Props = {
   itemAccessory?: (a: Attachment) => React.ReactNode;
 };
 
+function fileUrl(a: Attachment, download = false): string {
+  const base = `/api/file/${a.path}`;
+  const params = new URLSearchParams();
+  params.set("filename", a.filename);
+  if (download) params.set("download", "1");
+  return `${base}?${params.toString()}`;
+}
+
+function isPdfAttachment(a: Attachment): boolean {
+  return (
+    a.contentType === "application/pdf" || /\.pdf$/i.test(a.filename)
+  );
+}
+
 export function AttachmentGallery({ attachments, itemAccessory }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [pdfOpen, setPdfOpen] = useState<Attachment | null>(null);
   const images = attachments.filter((a) => a.contentType.startsWith("image/"));
 
   useEffect(() => {
@@ -54,21 +69,33 @@ export function AttachmentGallery({ attachments, itemAccessory }: Props) {
                   aria-label={`${a.filename} 크게 보기`}
                 >
                   <img
-                    src={`/api/file/${a.path}`}
+                    src={fileUrl(a)}
                     alt={a.filename}
                     className="h-32 w-full rounded object-cover"
                   />
                   <div className="mt-1 truncate text-xs">{a.filename}</div>
                 </button>
+              ) : isPdfAttachment(a) ? (
+                <button
+                  type="button"
+                  onClick={() => setPdfOpen(a)}
+                  className="block w-full text-left"
+                  aria-label={`${a.filename} 미리보기`}
+                >
+                  <div className="flex h-32 items-center justify-center rounded bg-muted text-3xl">
+                    📄
+                  </div>
+                  <div className="mt-1 truncate text-xs">{a.filename}</div>
+                </button>
               ) : (
                 <a
-                  href={`/api/file/${a.path}`}
+                  href={fileUrl(a)}
                   target="_blank"
                   rel="noreferrer"
                   className="block"
                 >
                   <div className="flex h-32 items-center justify-center rounded bg-muted text-3xl">
-                    📄
+                    📎
                   </div>
                   <div className="mt-1 truncate text-xs">{a.filename}</div>
                 </a>
@@ -92,7 +119,88 @@ export function AttachmentGallery({ attachments, itemAccessory }: Props) {
           }
         />
       )}
+
+      {pdfOpen && (
+        <PdfModal attachment={pdfOpen} onClose={() => setPdfOpen(null)} />
+      )}
     </>
+  );
+}
+
+function PdfModal({
+  attachment,
+  onClose,
+}: {
+  attachment: Attachment;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  const previewSrc = fileUrl(attachment) + "#toolbar=0&navpanes=0";
+  const downloadHref = fileUrl(attachment, true);
+  const openHref = fileUrl(attachment);
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex flex-col bg-black/85"
+      onClick={onClose}
+    >
+      <div
+        className="flex items-center justify-between gap-2 border-b border-white/10 bg-black/40 px-3 py-2 text-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="min-w-0 flex-1 truncate text-sm">
+          {attachment.filename}
+        </div>
+        <a
+          href={downloadHref}
+          download={attachment.filename}
+          className="rounded bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"
+        >
+          다운로드
+        </a>
+        <a
+          href={openHref}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20"
+        >
+          새 탭
+        </a>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+          className="rounded bg-white/10 p-1.5 hover:bg-white/20"
+        >
+          <CloseIcon />
+        </button>
+      </div>
+      <div
+        className="flex-1 overflow-hidden bg-neutral-900 p-2 sm:p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <iframe
+          src={previewSrc}
+          title={attachment.filename}
+          className="h-full w-full rounded bg-white"
+        />
+        <p className="mt-2 text-center text-xs text-white/60 sm:hidden">
+          모바일에서 미리보기가 안 보이면 위 &quot;새 탭&quot; 또는 &quot;다운로드&quot;를 사용하세요.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -130,15 +238,26 @@ function Lightbox({
         {a.filename} · {index + 1} / {images.length}
       </div>
 
-      <a
-        href={`/api/file/${a.path}`}
-        target="_blank"
-        rel="noreferrer"
+      <div
+        className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2"
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/60"
       >
-        새 탭에서 열기
-      </a>
+        <a
+          href={fileUrl(a, true)}
+          download={a.filename}
+          className="rounded bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/60"
+        >
+          다운로드
+        </a>
+        <a
+          href={fileUrl(a)}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/60"
+        >
+          새 탭
+        </a>
+      </div>
 
       {hasPrev && (
         <button
@@ -168,7 +287,7 @@ function Lightbox({
       )}
 
       <img
-        src={`/api/file/${a.path}`}
+        src={fileUrl(a)}
         alt={a.filename}
         onClick={(e) => e.stopPropagation()}
         className={cn(
