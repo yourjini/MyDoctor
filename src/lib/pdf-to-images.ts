@@ -9,7 +9,9 @@ let pdfjsPromise: Promise<PdfJsModule> | null = null;
 async function loadPdfjs(): Promise<PdfJsModule> {
   if (!pdfjsPromise) {
     pdfjsPromise = import("pdfjs-dist").then((mod) => {
-      mod.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${mod.version}/pdf.worker.min.mjs`;
+      // Self-hosted from /public (copied from node_modules/pdfjs-dist/build).
+      // pdfjs-dist 버전 업데이트 시 public/pdf.worker.min.mjs 도 같이 교체할 것.
+      mod.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
       return mod;
     });
   }
