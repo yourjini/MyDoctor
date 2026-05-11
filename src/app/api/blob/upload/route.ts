@@ -35,7 +35,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
+      // The store is private; `access: "private"` must be embedded in the
+      // client token so Vercel doesn't 400 the upload. SDK's Pick type omits
+      // `access` from this callback's return, so we cast.
+      onBeforeGenerateToken: (async () => ({
+        access: "private",
         allowedContentTypes: [
           "application/pdf",
           "image/jpeg",
@@ -48,7 +52,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         maximumSizeInBytes: 100 * 1024 * 1024,
         addRandomSuffix: true,
         tokenPayload: JSON.stringify({}),
-      }),
+      })) as Parameters<typeof handleUpload>[0]["onBeforeGenerateToken"],
       onUploadCompleted: async () => {
         // 서버가 GitHub로 옮긴 뒤 del()로 정리하므로 여기는 비움
       },
