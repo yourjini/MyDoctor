@@ -14,7 +14,7 @@ export async function uploadFileToBlob(
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<UploadedBlob> {
   const blob = await upload(file.name, file, {
-    access: "public",
+    access: "private",
     handleUploadUrl: "/api/blob/upload",
     onUploadProgress: (e) => {
       if (onProgress) onProgress(e.loaded, e.total);

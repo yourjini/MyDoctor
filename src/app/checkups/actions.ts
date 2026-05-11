@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { del as deleteBlob } from "@vercel/blob";
+import { del as deleteBlob, get as getBlob } from "@vercel/blob";
 import {
   createCheckup,
   deleteCheckup,
@@ -48,11 +48,13 @@ async function collectUploadedFiles(formData: FormData): Promise<{
       throw new Error("blob_urls 파싱 실패");
     }
     for (const b of blobs) {
-      const res = await fetch(b.url);
-      if (!res.ok) {
-        throw new Error(`Blob 다운로드 실패 (${b.filename}): ${res.status}`);
+      const got = await getBlob(b.url, { access: "private" });
+      if (!got || got.statusCode !== 200) {
+        throw new Error(
+          `Blob 다운로드 실패 (${b.filename}): ${got?.statusCode ?? "not found"}`,
+        );
       }
-      const buf = Buffer.from(await res.arrayBuffer());
+      const buf = Buffer.from(await new Response(got.stream).arrayBuffer());
       out.push(
         await convertFileBuf(
           b.filename,
