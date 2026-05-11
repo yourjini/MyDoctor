@@ -1,9 +1,41 @@
-// 디버그 전용 — BLOB_READ_WRITE_TOKEN이 가리키는 스토어가 실제로 살아있는지 확인.
+// 디버그 전용 — BLOB_READ_WRITE_TOKEN으로 list / put(public) / put(private) 시도.
 // 로그인한 사람만 접근 가능. 확인되면 삭제 예정.
 
-import { list } from "@vercel/blob";
+import { put, del, list } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+
+type StepResult = {
+  ok: boolean;
+  error?: string;
+  errorName?: string;
+  url?: string;
+};
+
+async function tryPut(
+  access: "public" | "private",
+  token: string,
+): Promise<StepResult> {
+  const probeName = `__debug-probe-${access}-${Date.now()}.txt`;
+  try {
+    const blob = await put(probeName, "ping", {
+      access,
+      token,
+      addRandomSuffix: true,
+      allowOverwrite: false,
+    } as Parameters<typeof put>[2]);
+    try {
+      await del(blob.url, { token });
+    } catch {
+      /* ignore cleanup failure */
+    }
+    return { ok: true, url: blob.url };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const name = err instanceof Error ? err.constructor.name : typeof err;
+    return { ok: false, error: msg, errorName: name };
+  }
+}
 
 export async function GET(): Promise<NextResponse> {
   const cookieStore = await cookies();
@@ -24,20 +56,25 @@ export async function GET(): Promise<NextResponse> {
     tail: token.slice(-6),
   };
 
+  let listStep: StepResult;
   try {
-    const result = await list({ limit: 1, token });
-    return NextResponse.json({
-      ...tokenInfo,
-      listOk: true,
-      hasBlobs: result.blobs.length > 0,
-      sampleUrl: result.blobs[0]?.url ?? null,
-    });
+    await list({ limit: 1, token });
+    listStep = { ok: true };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const name = err instanceof Error ? err.constructor.name : typeof err;
-    return NextResponse.json(
-      { ...tokenInfo, listOk: false, error: msg, errorName: name },
-      { status: 200 },
-    );
+    listStep = {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      errorName: err instanceof Error ? err.constructor.name : typeof err,
+    };
   }
+
+  const putPublic = await tryPut("public", token);
+  const putPrivate = await tryPut("private", token);
+
+  return NextResponse.json({
+    ...tokenInfo,
+    list: listStep,
+    putPublic,
+    putPrivate,
+  });
 }
