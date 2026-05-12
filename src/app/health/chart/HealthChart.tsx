@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
-import { MANIC_TAGS, MOOD_TAG_GROUPS } from "@/lib/health-tags";
+import { ATTENDANCE_TAGS, MANIC_TAGS, MOOD_TAG_GROUPS } from "@/lib/health-tags";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
 
@@ -47,6 +47,8 @@ export function HealthChart({ logs }: { logs: HealthLog[] }) {
       d.mood != null ||
       d.moodScale != null ||
       d.sleepHours != null ||
+      d.weight != null ||
+      d.attendanceCount != null ||
       d.menstruation,
   );
 
@@ -227,6 +229,50 @@ export function HealthChart({ logs }: { logs: HealthLog[] }) {
                   </LineChart>
                 </ResponsiveContainer>
               </ChartCard>
+
+              <ChartCard title="체중 (약 부작용 모니터링)">
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart
+                    data={data}
+                    margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tickFormatter={shortDate} fontSize={11} />
+                    <YAxis domain={["auto", "auto"]} fontSize={11} />
+                    <Tooltip content={<DayTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#a855f7"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      connectNulls
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="출결 이상 (결석/지각/조퇴)">
+                <ResponsiveContainer width="100%" height={150}>
+                  <LineChart
+                    data={data}
+                    margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="date" tickFormatter={shortDate} fontSize={11} />
+                    <YAxis allowDecimals={false} domain={[0, 3]} ticks={[0, 1, 2, 3]} fontSize={11} />
+                    <Tooltip content={<DayTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="attendanceCount"
+                      stroke="#e11d48"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      connectNulls={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
             </>
           )}
 
@@ -303,7 +349,10 @@ type Point = {
   mood: number | null;
   moodScale: number | null;
   sleepHours: number | null;
+  weight: number | null;
   manicCount: number | null;
+  attendanceCount: number | null;
+  attendanceTags: string[];
   menstruation: boolean;
   bodyTags: string[];
   moodTags: string[];
@@ -345,7 +394,10 @@ function buildSeries(
         mood: null,
         moodScale: null,
         sleepHours: null,
+        weight: null,
         manicCount: null,
+        attendanceCount: null,
+        attendanceTags: [],
         menstruation: false,
         bodyTags: [],
         moodTags: [],
@@ -396,14 +448,25 @@ function buildSeries(
         : null;
     let manicCount = 0;
     let hasManic = false;
+    const attendanceSet = new Set<string>();
     for (const l of dayLogs) {
       for (const t of l.moodTags) {
         if (MANIC_TAGS.has(t)) {
           manicCount += 1;
           hasManic = true;
         }
+        if (ATTENDANCE_TAGS.has(t)) {
+          attendanceSet.add(t);
+        }
       }
     }
+    const weightValues = dayLogs
+      .map((l) => l.weight)
+      .filter((n): n is number => typeof n === "number");
+    const avgWeight =
+      weightValues.length > 0
+        ? weightValues.reduce((a, b) => a + b, 0) / weightValues.length
+        : null;
 
     data.push({
       date: dateStr,
@@ -411,7 +474,10 @@ function buildSeries(
       mood: hasMood ? mood : null,
       moodScale: avgMoodScale,
       sleepHours: avgSleep,
+      weight: avgWeight,
       manicCount: hasManic ? manicCount : null,
+      attendanceCount: attendanceSet.size > 0 ? attendanceSet.size : null,
+      attendanceTags: Array.from(attendanceSet),
       menstruation: dayLogs.some((l) => !!l.menstruation),
       bodyTags: Array.from(allBody),
       moodTags: Array.from(allMood),
@@ -456,10 +522,14 @@ function buildIntradaySeries(
     const label = `${Number(m)}/${Number(d)} ${time}`;
     let manic = 0;
     let hasManic = false;
+    const attendanceList: string[] = [];
     for (const t of l.moodTags) {
       if (MANIC_TAGS.has(t)) {
         manic += 1;
         hasManic = true;
+      }
+      if (ATTENDANCE_TAGS.has(t)) {
+        attendanceList.push(t);
       }
     }
     let mood = 0;
@@ -479,7 +549,10 @@ function buildIntradaySeries(
       mood: hasMood ? mood : null,
       moodScale: l.moodScale ?? null,
       sleepHours: l.sleepHours ?? null,
+      weight: l.weight ?? null,
       manicCount: hasManic ? manic : null,
+      attendanceCount: attendanceList.length > 0 ? attendanceList.length : null,
+      attendanceTags: attendanceList,
       menstruation: !!l.menstruation,
       bodyTags: l.bodyTags,
       moodTags: l.moodTags,
@@ -560,7 +633,11 @@ function DayTooltip({
         </div>
       )}
       {p.sleepHours != null && <div>수면: {p.sleepHours.toFixed(1)}h</div>}
+      {p.weight != null && <div>체중: {p.weight.toFixed(1)}kg</div>}
       {p.manicCount != null && <div>조증 신호: {p.manicCount}개</div>}
+      {p.attendanceTags.length > 0 && (
+        <div className="text-rose-700">출결: {p.attendanceTags.join(", ")}</div>
+      )}
       {p.mood != null && <div>기분 점수: {p.mood > 0 ? "+" : ""}{p.mood}</div>}
       {p.menstruation && <div className="text-rose-600">생리</div>}
       {p.bodyTags.length > 0 && (

@@ -54,6 +54,14 @@ function parseSleepHours(formData: FormData): number | undefined {
   return Math.round(n * 2) / 2; // 0.5 단위
 }
 
+function parseWeight(formData: FormData): number | undefined {
+  const raw = String(formData.get("weight") || "").trim();
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0 || n > 300) return undefined;
+  return Math.round(n * 10) / 10; // 0.1kg 단위
+}
+
 function parseMeasuredAt(formData: FormData): string | undefined {
   const raw = String(formData.get("measuredAt") || "").trim();
   if (!raw) return undefined;
@@ -68,18 +76,28 @@ export async function createHealthLogAction(formData: FormData) {
   const bodyTags = parseTags(formData, "bodyTags");
   const moodTagsBase = parseTags(formData, "moodTags");
   const manicTags = parseTags(formData, "manicTags");
-  const moodTags = Array.from(new Set([...moodTagsBase, ...manicTags]));
+  const depressiveTags = parseTags(formData, "depressiveTags");
+  const attendanceTags = parseTags(formData, "attendanceTags");
+  const moodTags = Array.from(
+    new Set([
+      ...moodTagsBase,
+      ...manicTags,
+      ...depressiveTags,
+      ...attendanceTags,
+    ]),
+  );
   const severity = parseSeverity(formData);
   const menstruation = parseMenstruation(formData);
   const note = String(formData.get("note") || "").trim() || undefined;
 
   if (!date) throw new Error("날짜는 필수입니다");
 
-  // 박란하만 moodScale/sleepHours/measuredAt 적용
+  // 박란하만 moodScale/sleepHours/measuredAt/weight 적용
   const isBipolarSubject = subject === "박란하";
   const moodScale = isBipolarSubject ? parseMoodScale(formData) : undefined;
   const sleepHours = isBipolarSubject ? parseSleepHours(formData) : undefined;
   const measuredAt = isBipolarSubject ? parseMeasuredAt(formData) : undefined;
+  const weight = isBipolarSubject ? parseWeight(formData) : undefined;
 
   await createHealthLog({
     date,
@@ -92,6 +110,7 @@ export async function createHealthLogAction(formData: FormData) {
     moodScale,
     sleepHours,
     measuredAt,
+    weight,
   });
 
   revalidatePath("/health");
@@ -109,7 +128,16 @@ export async function updateHealthLogAction(formData: FormData) {
 
   const moodTagsBase = parseTags(formData, "moodTags");
   const manicTags = parseTags(formData, "manicTags");
-  const moodTags = Array.from(new Set([...moodTagsBase, ...manicTags]));
+  const depressiveTags = parseTags(formData, "depressiveTags");
+  const attendanceTags = parseTags(formData, "attendanceTags");
+  const moodTags = Array.from(
+    new Set([
+      ...moodTagsBase,
+      ...manicTags,
+      ...depressiveTags,
+      ...attendanceTags,
+    ]),
+  );
 
   const patch: Partial<HealthLog> = {
     date: String(formData.get("date") || ""),
@@ -122,6 +150,7 @@ export async function updateHealthLogAction(formData: FormData) {
     moodScale: isBipolarSubject ? parseMoodScale(formData) : undefined,
     sleepHours: isBipolarSubject ? parseSleepHours(formData) : undefined,
     measuredAt: isBipolarSubject ? parseMeasuredAt(formData) : undefined,
+    weight: isBipolarSubject ? parseWeight(formData) : undefined,
   };
 
   await updateHealthLog(year, id, patch);

@@ -12,6 +12,7 @@ export function TagPicker({
   selectedClass = "bg-rose-500 text-white border-rose-500",
   unselectedClass = "bg-background text-foreground border-border hover:bg-accent",
   placeholder = "직접 입력하고 Enter",
+  hideGroupLabel = false,
 }: {
   name: string;
   groups: TagGroup[];
@@ -19,6 +20,7 @@ export function TagPicker({
   selectedClass?: string;
   unselectedClass?: string;
   placeholder?: string;
+  hideGroupLabel?: boolean;
 }) {
   const [selected, setSelected] = useState<string[]>(() =>
     Array.from(new Set(defaultValue)),
@@ -51,7 +53,9 @@ export function TagPicker({
 
       {groups.map((g) => (
         <div key={g.label}>
-          <div className="mb-1 text-xs text-muted-foreground">{g.label}</div>
+          {!hideGroupLabel && (
+            <div className="mb-1 text-xs text-muted-foreground">{g.label}</div>
+          )}
           <div className="flex flex-wrap gap-1.5">
             {g.tags.map((tag) => {
               const on = selected.includes(tag);

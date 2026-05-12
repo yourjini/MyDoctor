@@ -6,7 +6,13 @@ import { SearchBar } from "@/components/SearchBar";
 import { listHealthLogs } from "@/lib/store";
 import { asPerson, matchesFilter } from "@/lib/people";
 import { KIND_STYLES } from "@/lib/kinds";
-import { MENSTRUATION_LABEL, SEVERITY_LABEL } from "@/lib/health-tags";
+import {
+  ATTENDANCE_TAGS,
+  DEPRESSIVE_TAGS,
+  MANIC_TAGS,
+  MENSTRUATION_LABEL,
+  SEVERITY_LABEL,
+} from "@/lib/health-tags";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
 
@@ -122,6 +128,11 @@ export default async function HealthPage({
                                 💤 {l.sleepHours}h
                               </span>
                             )}
+                            {l.weight != null && (
+                              <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
+                                ⚖ {l.weight}kg
+                              </span>
+                            )}
                             {l.menstruation && (
                               <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
                                 생리 {MENSTRUATION_LABEL[l.menstruation]}
@@ -138,7 +149,15 @@ export default async function HealthPage({
                             {l.moodTags.map((t) => (
                               <span
                                 key={`m-${t}`}
-                                className="rounded-full bg-indigo-50 px-2 py-0.5 text-indigo-700"
+                                className={
+                                  ATTENDANCE_TAGS.has(t)
+                                    ? "rounded-full bg-rose-600 px-2 py-0.5 font-medium text-white"
+                                    : MANIC_TAGS.has(t)
+                                      ? "rounded-full bg-orange-100 px-2 py-0.5 text-orange-800"
+                                      : DEPRESSIVE_TAGS.has(t)
+                                        ? "rounded-full bg-blue-100 px-2 py-0.5 text-blue-800"
+                                        : "rounded-full bg-indigo-50 px-2 py-0.5 text-indigo-700"
+                                }
                               >
                                 {t}
                               </span>

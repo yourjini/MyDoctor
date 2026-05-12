@@ -85,6 +85,7 @@ export type HealthLog = {
   moodScale?: number; // -5(우울) ~ 0(평온) ~ +5(조증)
   sleepHours?: number; // 0~24
   measuredAt?: string; // HH:MM (선택). 일중 변동 추적용
+  weight?: number; // kg, 양극성 약 부작용(체중증가) 모니터링
   createdAt: string;
   updatedAt: string;
 };

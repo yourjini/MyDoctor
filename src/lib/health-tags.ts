@@ -47,7 +47,36 @@ export const MANIC_TAG_GROUP = {
   ],
 };
 
+export const DEPRESSIVE_TAG_GROUP = {
+  label: "우울 신호",
+  tags: [
+    "잠 많아짐",
+    "무기력",
+    "외출 거부",
+    "흥미 상실",
+    "식욕 변화",
+    "죄책감·자책",
+    "울음",
+    "자살 생각",
+    "집중력 저하",
+  ],
+};
+
+export const ATTENDANCE_TAG_GROUP = {
+  label: "출결",
+  tags: ["결석", "지각", "조퇴"],
+};
+
 export const MANIC_TAGS = new Set(MANIC_TAG_GROUP.tags);
+export const DEPRESSIVE_TAGS = new Set(DEPRESSIVE_TAG_GROUP.tags);
+export const ATTENDANCE_TAGS = new Set(ATTENDANCE_TAG_GROUP.tags);
+
+// 박란하 양극성 박스에서 다루는 모든 신호 태그 (저장은 moodTags 안에 통합)
+export const BIPOLAR_SIGNAL_TAGS = new Set<string>([
+  ...MANIC_TAG_GROUP.tags,
+  ...DEPRESSIVE_TAG_GROUP.tags,
+  ...ATTENDANCE_TAG_GROUP.tags,
+]);
 
 export const MOOD_SCALE_MARKERS: Record<number, string> = {
   [-5]: "심한 우울",

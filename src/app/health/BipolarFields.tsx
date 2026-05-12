@@ -3,65 +3,130 @@
 import { useState } from "react";
 import { TagPicker } from "@/components/TagPicker";
 import { PEOPLE, DEFAULT_PERSON } from "@/lib/people";
-import { MANIC_TAG_GROUP, MOOD_SCALE_MARKERS } from "@/lib/health-tags";
+import {
+  MANIC_TAG_GROUP,
+  DEPRESSIVE_TAG_GROUP,
+  ATTENDANCE_TAG_GROUP,
+  MANIC_TAGS,
+  DEPRESSIVE_TAGS,
+  ATTENDANCE_TAGS,
+  MOOD_SCALE_MARKERS,
+} from "@/lib/health-tags";
 import { cn } from "@/lib/utils";
 
 const BIPOLAR_SUBJECT = "박란하";
 
 export function BipolarAwareFields({
+  defaultDate,
   defaultSubject,
   defaultMoodScale,
   defaultSleepHours,
+  defaultWeight,
   defaultMoodTags,
   defaultMeasuredAt,
 }: {
+  defaultDate: string;
   defaultSubject?: string;
   defaultMoodScale?: number;
   defaultSleepHours?: number;
+  defaultWeight?: number;
   defaultMoodTags?: string[];
   defaultMeasuredAt?: string;
 }) {
   const [subject, setSubject] = useState(defaultSubject ?? DEFAULT_PERSON);
   const isBipolar = subject === BIPOLAR_SUBJECT;
 
+  const manicDefault =
+    defaultMoodTags?.filter((t) => MANIC_TAGS.has(t)) ?? [];
+  const depressiveDefault =
+    defaultMoodTags?.filter((t) => DEPRESSIVE_TAGS.has(t)) ?? [];
+  const attendanceDefault =
+    defaultMoodTags?.filter((t) => ATTENDANCE_TAGS.has(t)) ?? [];
+
   return (
-    <>
-      <select
-        name="subject"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-      >
-        {PEOPLE.map((p) => (
-          <option key={p} value={p}>
-            {p}
-          </option>
-        ))}
-      </select>
+    <div className="space-y-3">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-sm font-medium">
+            날짜<span className="ml-0.5 text-destructive">*</span>
+          </label>
+          <input
+            type="date"
+            name="date"
+            defaultValue={defaultDate}
+            required
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">
+            대상자<span className="ml-0.5 text-destructive">*</span>
+          </label>
+          <select
+            name="subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            {PEOPLE.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {isBipolar && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50/30 p-3 space-y-4 mt-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50/30 p-3 sm:p-4 space-y-4">
           <div className="text-xs font-medium text-rose-900">
             박란하 — 양극성 추적
           </div>
 
-          <div className="flex flex-wrap items-end gap-3">
+          {/* 숫자 입력들: 측정시간 / 수면 / 체중 — 한 줄로 */}
+          <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-sm font-medium">
-                측정시간 (선택)
+                측정시간 <span className="text-xs text-muted-foreground">(선택)</span>
               </label>
               <input
                 type="time"
                 name="measuredAt"
                 defaultValue={defaultMeasuredAt ?? ""}
-                className="rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
             </div>
-            <p className="pb-3 text-xs text-muted-foreground">
-              아침/저녁 따로 기록할 때 일중 변동을 추적합니다
-            </p>
+            <div>
+              <label className="mb-1 block text-sm font-medium">수면시간</label>
+              <input
+                type="number"
+                name="sleepHours"
+                defaultValue={defaultSleepHours ?? ""}
+                min={0}
+                max={24}
+                step={0.5}
+                placeholder="시간 (예: 6.5)"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                체중 <span className="text-xs text-muted-foreground">(kg)</span>
+              </label>
+              <input
+                type="number"
+                name="weight"
+                defaultValue={defaultWeight ?? ""}
+                min={0}
+                max={300}
+                step={0.1}
+                placeholder="kg (예: 58.4)"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
           </div>
 
+          {/* 조증/우울 스케일 — 전체 너비 */}
           <div>
             <label className="mb-1 block text-sm font-medium">
               조증/우울 스케일
@@ -69,41 +134,54 @@ export function BipolarAwareFields({
             <MoodScalePicker defaultValue={defaultMoodScale} />
           </div>
 
+          {/* 신호 태그들: 좌우 — sm 이상에서 2열 */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                조증 신호
+              </label>
+              <TagPicker
+                name="manicTags"
+                groups={[MANIC_TAG_GROUP]}
+                defaultValue={manicDefault}
+                selectedClass="bg-orange-500 text-white border-orange-500"
+                hideGroupLabel
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                우울 신호
+              </label>
+              <TagPicker
+                name="depressiveTags"
+                groups={[DEPRESSIVE_TAG_GROUP]}
+                defaultValue={depressiveDefault}
+                selectedClass="bg-blue-600 text-white border-blue-600"
+                hideGroupLabel
+              />
+            </div>
+          </div>
+
+          {/* 출결 — 전체 너비, 가로 배치 */}
           <div>
-            <label className="mb-1 block text-sm font-medium">수면시간</label>
-            <input
-              type="number"
-              name="sleepHours"
-              defaultValue={defaultSleepHours ?? ""}
-              min={0}
-              max={24}
-              step={0.5}
-              placeholder="시간 (예: 6.5)"
-              className="w-32 rounded-md border bg-background px-3 py-2 text-sm"
+            <label className="mb-1 block text-sm font-medium">
+              출결 (학교)
+            </label>
+            <TagPicker
+              name="attendanceTags"
+              groups={[ATTENDANCE_TAG_GROUP]}
+              defaultValue={attendanceDefault}
+              selectedClass="bg-rose-600 text-white border-rose-600"
+              hideGroupLabel
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              조증 신호 태그
-            </label>
-            <TagPicker
-              name="manicTags"
-              groups={[MANIC_TAG_GROUP]}
-              defaultValue={
-                defaultMoodTags?.filter((t) =>
-                  MANIC_TAG_GROUP.tags.includes(t),
-                ) ?? []
-              }
-              selectedClass="bg-orange-500 text-white border-orange-500"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              ↑ 일반 mood 태그와 함께 저장됩니다.
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            신호 태그·출결은 기분 태그와 함께 저장됩니다.
+          </p>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

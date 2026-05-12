@@ -24,20 +24,7 @@ export default async function NewHealthLogPage({
         action={createHealthLogAction}
         className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="날짜" required>
-            <input
-              type="date"
-              name="date"
-              defaultValue={initialDate}
-              required
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
-          </Field>
-          <Field label="대상자" required>
-            <BipolarAwareFields />
-          </Field>
-        </div>
+        <BipolarAwareFields defaultDate={initialDate} />
 
         <Field label="컨디션 (전체)">
           <SeverityRadios />

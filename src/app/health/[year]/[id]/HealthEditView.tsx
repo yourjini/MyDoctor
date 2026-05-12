@@ -7,7 +7,10 @@ import {
   MENSTRUATION_LABEL,
   MOOD_TAG_GROUPS,
   SEVERITY_LABEL,
+  BIPOLAR_SIGNAL_TAGS,
   MANIC_TAGS,
+  DEPRESSIVE_TAGS,
+  ATTENDANCE_TAGS,
 } from "@/lib/health-tags";
 import { updateHealthLogAction } from "../../actions";
 import type { HealthLog } from "@/lib/types";
@@ -41,26 +44,15 @@ export function HealthEditView({
       <input type="hidden" name="id" value={log.id} />
       <input type="hidden" name="year" value={year} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="날짜" required>
-          <input
-            type="date"
-            name="date"
-            defaultValue={log.date}
-            required
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="대상자" required>
-          <BipolarAwareFields
-            defaultSubject={log.subject}
-            defaultMoodScale={log.moodScale}
-            defaultSleepHours={log.sleepHours}
-            defaultMoodTags={log.moodTags}
-            defaultMeasuredAt={log.measuredAt}
-          />
-        </Field>
-      </div>
+      <BipolarAwareFields
+        defaultDate={log.date}
+        defaultSubject={log.subject}
+        defaultMoodScale={log.moodScale}
+        defaultSleepHours={log.sleepHours}
+        defaultWeight={log.weight}
+        defaultMoodTags={log.moodTags}
+        defaultMeasuredAt={log.measuredAt}
+      />
 
       <Field label="컨디션 (전체)">
         <SeverityRadios defaultValue={log.severity} />
@@ -79,7 +71,7 @@ export function HealthEditView({
         <TagPicker
           name="moodTags"
           groups={MOOD_TAG_GROUPS}
-          defaultValue={log.moodTags.filter((t) => !MANIC_TAGS.has(t))}
+          defaultValue={log.moodTags.filter((t) => !BIPOLAR_SIGNAL_TAGS.has(t))}
           selectedClass="bg-indigo-500 text-white border-indigo-500"
         />
       </Field>
@@ -152,15 +144,42 @@ function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
       {log.sleepHours != null && (
         <Row label="수면시간">{log.sleepHours} 시간</Row>
       )}
+      {log.weight != null && (
+        <Row label="체중">{log.weight} kg</Row>
+      )}
       {log.bodyTags.length > 0 && (
         <Row label="아픈 곳 / 증상">
           <TagList tags={log.bodyTags} className="bg-rose-50 text-rose-700" />
         </Row>
       )}
-      {log.moodTags.length > 0 && (
+      {log.moodTags.some((t) => MANIC_TAGS.has(t)) && (
+        <Row label="조증 신호">
+          <TagList
+            tags={log.moodTags.filter((t) => MANIC_TAGS.has(t))}
+            className="bg-orange-100 text-orange-800"
+          />
+        </Row>
+      )}
+      {log.moodTags.some((t) => DEPRESSIVE_TAGS.has(t)) && (
+        <Row label="우울 신호">
+          <TagList
+            tags={log.moodTags.filter((t) => DEPRESSIVE_TAGS.has(t))}
+            className="bg-blue-100 text-blue-800"
+          />
+        </Row>
+      )}
+      {log.moodTags.some((t) => ATTENDANCE_TAGS.has(t)) && (
+        <Row label="출결">
+          <TagList
+            tags={log.moodTags.filter((t) => ATTENDANCE_TAGS.has(t))}
+            className="bg-rose-100 text-rose-800"
+          />
+        </Row>
+      )}
+      {log.moodTags.some((t) => !BIPOLAR_SIGNAL_TAGS.has(t)) && (
         <Row label="기분 / 심리">
           <TagList
-            tags={log.moodTags}
+            tags={log.moodTags.filter((t) => !BIPOLAR_SIGNAL_TAGS.has(t))}
             className="bg-indigo-50 text-indigo-700"
           />
         </Row>
