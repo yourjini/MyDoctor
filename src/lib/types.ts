@@ -144,10 +144,25 @@ export type Meal = {
   updatedAt: string;
 };
 
+// Private diary — separate password lock above app auth.
+// Used for the parent's personal notes about 박란하: condition,
+// upsetting events, concerns. Not surfaced anywhere outside /diary.
+export type DiaryEntry = {
+  id: string;
+  kind: "diary";
+  date: string; // YYYY-MM-DD
+  mood?: number; // -5 ~ +5, the parent's own state when writing
+  title?: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AnyRecord =
   | Visit
   | Appointment
   | Checkup
   | HealthLog
   | MenstrualCycle
-  | Meal;
+  | Meal
+  | DiaryEntry;

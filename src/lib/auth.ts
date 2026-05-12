@@ -3,6 +3,10 @@
 const COOKIE_NAME = "mydoctor-auth";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
+const DIARY_COOKIE_NAME = "mydoctor-diary";
+// Shorter lifetime for the sensitive diary scope — re-prompt weekly.
+const DIARY_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+
 function getSecret(): string {
   const s = process.env.AUTH_SECRET;
   if (!s || s.length < 16) {
@@ -11,6 +15,8 @@ function getSecret(): string {
   return s;
 }
 
+// `scope` is part of the signed payload, so an auth token can never be
+// silently reused as a diary token (or vice versa) — different signatures.
 async function hmac(payload: string): Promise<string> {
   const secret = getSecret();
   const enc = new TextEncoder();
@@ -50,8 +56,40 @@ export async function verifySessionToken(
   return constantTimeEqual(sig, expected);
 }
 
+export async function makeDiaryToken(): Promise<string> {
+  const issuedAt = Date.now();
+  const payload = `diary:${issuedAt}`;
+  const sig = await hmac(payload);
+  return `${payload}.${sig}`;
+}
+
+export async function verifyDiaryToken(
+  token: string | undefined,
+): Promise<boolean> {
+  if (!token) return false;
+  const [payload, sig] = token.split(".");
+  if (!payload || !sig) return false;
+  if (!payload.startsWith("diary:")) return false;
+  const issuedAt = Number(payload.slice("diary:".length));
+  if (!Number.isFinite(issuedAt)) return false;
+  if (Date.now() - issuedAt > DIARY_MAX_AGE_SECONDS * 1000) return false;
+  let expected: string;
+  try {
+    expected = await hmac(payload);
+  } catch {
+    return false;
+  }
+  return constantTimeEqual(sig, expected);
+}
+
 export function checkPassword(input: string): boolean {
   const expected = process.env.APP_PASSWORD;
+  if (!expected) return false;
+  return constantTimeEqual(input, expected);
+}
+
+export function checkDiaryPassword(input: string): boolean {
+  const expected = process.env.DIARY_PASSWORD;
   if (!expected) return false;
   return constantTimeEqual(input, expected);
 }
@@ -75,3 +113,5 @@ function toHex(bytes: Uint8Array): string {
 
 export const AUTH_COOKIE = COOKIE_NAME;
 export const AUTH_MAX_AGE = MAX_AGE_SECONDS;
+export const DIARY_COOKIE = DIARY_COOKIE_NAME;
+export const DIARY_MAX_AGE = DIARY_MAX_AGE_SECONDS;

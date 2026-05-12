@@ -172,6 +172,7 @@ const SITEMAP_GROUPS: { label: string; items: { href: string; label: string }[] 
       { href: "/health/chart", label: "그래프" },
       { href: "/period", label: "생리주기" },
       { href: "/meals", label: "식단" },
+      { href: "/diary", label: "🔒 다이어리" },
     ],
   },
   {

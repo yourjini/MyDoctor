@@ -13,6 +13,7 @@ import type {
   Appointment,
   Attachment,
   Checkup,
+  DiaryEntry,
   HealthLog,
   Meal,
   MenstrualCycle,
@@ -50,6 +51,10 @@ const mealDir = (year: string, month: string) =>
   `data/meals/${year}/${month}`;
 const mealFile = (year: string, month: string, id: string) =>
   `${mealDir(year, month)}/${id}.json`;
+
+const diaryDir = (year: string) => `data/diary/${year}`;
+const diaryFile = (year: string, id: string) =>
+  `${diaryDir(year)}/${id}.json`;
 
 function ymOf(date: string): { year: string; month: string } {
   return { year: date.slice(0, 4), month: date.slice(5, 7) };
@@ -653,6 +658,75 @@ export async function deleteMeal(
   id: string,
 ): Promise<void> {
   await deleteFile(mealFile(year, month, id), `delete meal ${id}`);
+}
+
+// ============================================================
+// Diary (private — locked by separate password)
+// ============================================================
+
+export async function listDiaryEntries(): Promise<DiaryEntry[]> {
+  const all = await listAllJSON<DiaryEntry>("data/diary");
+  return all.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+}
+
+export async function getDiaryEntry(
+  year: string,
+  id: string,
+): Promise<DiaryEntry | null> {
+  return readJSON<DiaryEntry>(diaryFile(year, id));
+}
+
+export async function createDiaryEntry(
+  input: Omit<DiaryEntry, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<DiaryEntry> {
+  const id = uuid();
+  const year = yearOf(input.date);
+  const now = new Date().toISOString();
+  const entry: DiaryEntry = {
+    id,
+    kind: "diary",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(diaryFile(year, id), entry, `add diary ${input.date}`);
+  } catch (err) {
+    throw new Error(`다이어리 저장 실패: ${describeError(err)}`);
+  }
+  return entry;
+}
+
+export async function updateDiaryEntry(
+  year: string,
+  id: string,
+  patch: Partial<DiaryEntry>,
+): Promise<DiaryEntry | null> {
+  const current = await getDiaryEntry(year, id);
+  if (!current) return null;
+  const next: DiaryEntry = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "diary",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(diaryFile(year, id), next, `update diary ${id}`);
+  } catch (err) {
+    throw new Error(`다이어리 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteDiaryEntry(
+  year: string,
+  id: string,
+): Promise<void> {
+  await deleteFile(diaryFile(year, id), `delete diary ${id}`);
 }
 
 // ============================================================
