@@ -3,7 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { upsertProfile } from "@/lib/store";
+import { PEOPLE } from "@/lib/people";
 import type { ActivityLevel, PersonProfile } from "@/lib/types";
+
+// Profile is only kept for tracked individuals — 전체 has no profile,
+// 박범진 currently doesn't either (no diet tracking). Locking the allow-list
+// here prevents an attacker (or stray client form) from writing an arbitrary
+// data/profiles/<garbage>.json file in the data repo.
+const PROFILE_PEOPLE = new Set<string>(
+  PEOPLE.filter((p) => p !== "전체"),
+);
 
 const ACTIVITY_VALUES = new Set<ActivityLevel>([
   "low",
@@ -40,6 +49,9 @@ function parseTags(formData: FormData, name: string): string[] | undefined {
 export async function saveProfileAction(formData: FormData) {
   const person = String(formData.get("person") || "").trim();
   if (!person) throw new Error("대상자 누락");
+  if (!PROFILE_PEOPLE.has(person)) {
+    throw new Error("올바르지 않은 대상자");
+  }
 
   const activity = String(formData.get("activity") || "").trim();
   const dietStyle = String(formData.get("dietStyle") || "").trim();

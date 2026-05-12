@@ -70,6 +70,8 @@ function parseMeasuredAt(formData: FormData): string | undefined {
   return raw;
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function createHealthLogAction(formData: FormData) {
   const date = String(formData.get("date") || "");
   const subject = asPerson(formData.get("subject"));
@@ -91,6 +93,7 @@ export async function createHealthLogAction(formData: FormData) {
   const note = String(formData.get("note") || "").trim() || undefined;
 
   if (!date) throw new Error("날짜는 필수입니다");
+  if (!ISO_DATE_RE.test(date)) throw new Error("날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)");
 
   // 박란하만 moodScale/sleepHours/measuredAt/weight 적용
   const isBipolarSubject = subject === "박란하";
@@ -125,6 +128,9 @@ export async function updateHealthLogAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
+  const date = String(formData.get("date") || "");
+  if (!ISO_DATE_RE.test(date)) throw new Error("날짜 형식이 올바르지 않습니다");
 
   const subject = asPerson(formData.get("subject"));
   const isBipolarSubject = subject === "박란하";
@@ -148,7 +154,7 @@ export async function updateHealthLogAction(formData: FormData) {
   }
 
   const patch: Partial<HealthLog> = {
-    date: String(formData.get("date") || ""),
+    date,
     subject,
     bodyTags: parseTags(formData, "bodyTags"),
     moodTags,
@@ -172,6 +178,7 @@ export async function deleteHealthLogAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await deleteHealthLog(year, id);
   revalidatePath("/health");
   revalidatePath("/");

@@ -12,6 +12,7 @@ import {
 import type { MenstruationFlow } from "@/lib/types";
 
 const PERIOD_SUBJECTS = ["박란하", "최진희"] as const;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function asPeriodSubject(value: unknown): string {
   if (
@@ -63,6 +64,7 @@ export async function endTodayAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await updateMenstrualCycle(year, id, { endDate: todayKST() });
   revalidatePath("/period");
   redirect("/period");
@@ -77,6 +79,8 @@ export async function createCycleAction(formData: FormData) {
   const notes = String(formData.get("notes") || "").trim() || undefined;
 
   if (!startDate) throw new Error("시작일은 필수입니다");
+  if (!ISO_DATE_RE.test(startDate)) throw new Error("시작일 형식이 올바르지 않습니다");
+  if (endDate && !ISO_DATE_RE.test(endDate)) throw new Error("종료일 형식이 올바르지 않습니다");
   if (endDate && endDate < startDate) {
     throw new Error("종료일은 시작일과 같거나 이후여야 합니다");
   }
@@ -96,6 +100,7 @@ export async function updateCycleAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
 
   const subject = asPeriodSubject(formData.get("subject"));
   const startDate = String(formData.get("startDate") || "").trim();
@@ -105,6 +110,8 @@ export async function updateCycleAction(formData: FormData) {
   const notes = String(formData.get("notes") || "").trim() || undefined;
 
   if (!startDate) throw new Error("시작일은 필수입니다");
+  if (!ISO_DATE_RE.test(startDate)) throw new Error("시작일 형식이 올바르지 않습니다");
+  if (endDate && !ISO_DATE_RE.test(endDate)) throw new Error("종료일 형식이 올바르지 않습니다");
   if (endDate && endDate < startDate) {
     throw new Error("종료일은 시작일과 같거나 이후여야 합니다");
   }
@@ -128,6 +135,7 @@ export async function deleteCycleAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await deleteMenstrualCycle(year, id);
   revalidatePath("/period");
   redirect("/period");

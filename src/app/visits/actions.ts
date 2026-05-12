@@ -37,6 +37,8 @@ async function readUploadedFiles(
   return out;
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function createVisitAction(formData: FormData) {
   const date = String(formData.get("date") || "");
   const subject = asPerson(formData.get("subject"));
@@ -50,6 +52,7 @@ export async function createVisitAction(formData: FormData) {
   if (!date || !hospitalName || !diagnosis) {
     throw new Error("날짜, 병원명, 병명은 필수입니다");
   }
+  if (!ISO_DATE_RE.test(date)) throw new Error("방문일 형식이 올바르지 않습니다 (YYYY-MM-DD)");
 
   const fileBufs = await readUploadedFiles(formData);
 
@@ -76,9 +79,12 @@ export async function updateVisitAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
+  const date = String(formData.get("date") || "");
+  if (!ISO_DATE_RE.test(date)) throw new Error("방문일 형식이 올바르지 않습니다");
 
   const patch: Partial<Visit> = {
-    date: String(formData.get("date") || ""),
+    date,
     subject: asPerson(formData.get("subject")),
     hospitalType: String(formData.get("hospitalType") || ""),
     hospitalName: String(formData.get("hospitalName") || "").trim(),
@@ -101,6 +107,7 @@ export async function deleteVisitAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await deleteVisit(year, id);
   revalidatePath("/visits");
   revalidatePath("/");
@@ -112,7 +119,9 @@ export async function removeVisitAttachmentAction(formData: FormData) {
   const year = String(formData.get("year") || "");
   const path = String(formData.get("path") || "");
   if (!id || !year || !path) throw new Error("id/year/path 누락");
-  if (!path.startsWith(`data/visits/${year}/${id}-files/`)) {
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
+  const expectedPrefix = `data/visits/${year}/${id}-files/`;
+  if (!path.startsWith(expectedPrefix) || path.includes("..")) {
     throw new Error("invalid path");
   }
   await removeVisitAttachment(year, id, path);

@@ -6,12 +6,14 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { AUTH_COOKIE, verifySessionToken } from "@/lib/auth";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  // 로그인 세션 확인 — 비인가 업로드 차단
+  // 로그인 세션 확인 — 비인가 업로드 차단. middleware도 같은 검사를 하지만
+  // defense-in-depth로 한 번 더 검증한다 (HMAC 서명까지 확인).
   const cookieStore = await cookies();
-  const auth = cookieStore.get("mydoctor-auth");
-  if (!auth) {
+  const token = cookieStore.get(AUTH_COOKIE)?.value;
+  if (!(await verifySessionToken(token))) {
     return NextResponse.json(
       { error: "unauthorized" },
       { status: 401 },

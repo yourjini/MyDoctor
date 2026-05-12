@@ -48,6 +48,11 @@ async function collectUploadedFiles(formData: FormData): Promise<{
       throw new Error("blob_urls 파싱 실패");
     }
     for (const b of blobs) {
+      // URL이 우리 Vercel Blob 스토어에서 온 것인지 확인.
+      // *.public.blob.vercel-storage.com 또는 *.blob.vercel-storage.com 만 허용
+      if (typeof b?.url !== "string" || !isAllowedBlobUrl(b.url)) {
+        throw new Error("올바르지 않은 Blob URL");
+      }
       const got = await getBlob(b.url, { access: "private" });
       if (!got || got.statusCode !== 200) {
         throw new Error(
@@ -90,6 +95,17 @@ async function convertFileBuf(
   return { filename: name, contentType: ct, data: buf };
 }
 
+function isAllowedBlobUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return false;
+    // Vercel Blob 호스트는 *.blob.vercel-storage.com 형태로 끝남
+    return u.hostname.endsWith(".blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
 async function cleanupBlobs(urls: string[]): Promise<void> {
   if (urls.length === 0) return;
   // 실패해도 메인 흐름 막지 않음 — 다음 cron으로 정리하는 게 이상적이지만
@@ -105,6 +121,8 @@ async function cleanupBlobs(urls: string[]): Promise<void> {
   );
 }
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function createCheckupAction(formData: FormData) {
   const date = String(formData.get("date") || "").trim();
   const subject = asPerson(formData.get("subject"));
@@ -117,6 +135,7 @@ export async function createCheckupAction(formData: FormData) {
   const notes = String(formData.get("notes") || "").trim() || undefined;
 
   if (!date || !title) throw new Error("검진일과 제목은 필수입니다");
+  if (!ISO_DATE_RE.test(date)) throw new Error("검진일 형식이 올바르지 않습니다 (YYYY-MM-DD)");
 
   const { files: fileBufs, blobUrlsToCleanup } = await collectUploadedFiles(
     formData,
@@ -144,8 +163,11 @@ export async function updateCheckupAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
+  const date = String(formData.get("date") || "");
+  if (!ISO_DATE_RE.test(date)) throw new Error("검진일 형식이 올바르지 않습니다");
   const patch: Partial<Checkup> = {
-    date: String(formData.get("date") || ""),
+    date,
     subject: asPerson(formData.get("subject")),
     title: String(formData.get("title") || "").trim(),
     hospitalName: String(formData.get("hospitalName") || "").trim() || undefined,
@@ -171,6 +193,7 @@ export async function deleteCheckupAction(formData: FormData) {
   const id = String(formData.get("id") || "");
   const year = String(formData.get("year") || "");
   if (!id || !year) throw new Error("id/year 누락");
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await deleteCheckup(year, id);
   revalidatePath("/checkups");
   redirect("/checkups");
@@ -181,7 +204,10 @@ export async function removeCheckupAttachmentAction(formData: FormData) {
   const year = String(formData.get("year") || "");
   const path = String(formData.get("path") || "");
   if (!id || !year || !path) throw new Error("id/year/path 누락");
-  if (!path.startsWith(`data/checkups/${year}/${id}-files/`)) {
+  if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
+  // path traversal 방어: 정확한 prefix + 추가 ".." 금지
+  const expectedPrefix = `data/checkups/${year}/${id}-files/`;
+  if (!path.startsWith(expectedPrefix) || path.includes("..")) {
     throw new Error("invalid path");
   }
   await removeCheckupAttachment(year, id, path);

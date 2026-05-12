@@ -11,7 +11,8 @@ export async function GET(
 ) {
   const { path: parts } = await ctx.params;
   const path = parts.map(decodeURIComponent).join("/");
-  if (!path.startsWith("data/")) {
+  // data/ 안으로 한정. 추가로 .. 세그먼트가 끼어들면 거부.
+  if (!path.startsWith("data/") || parts.includes("..")) {
     return new NextResponse("forbidden", { status: 403 });
   }
   const file = await readFile(path);
