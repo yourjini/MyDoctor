@@ -9,6 +9,11 @@ import {
   suggestMeals,
   type MealLibraryItem,
 } from "@/lib/meal-library";
+import {
+  matchFoods,
+  sumMatch,
+  type FoodMatch,
+} from "@/lib/food-db";
 import type { Meal, MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +79,37 @@ export function MealForm({
     defaults?.fromLibraryId ?? "",
   );
   const [suggestions, setSuggestions] = useState<MealLibraryItem[]>([]);
+
+  // 메뉴 텍스트 → 음식 매칭. 사용자가 ±로 인분 조정 가능.
+  const baseMatches = useMemo<FoodMatch[]>(() => matchFoods(menu), [menu]);
+  const [matchOverrides, setMatchOverrides] = useState<Record<string, number>>(
+    {},
+  );
+  const matches: FoodMatch[] = useMemo(
+    () =>
+      baseMatches.map((m) => {
+        const key = m.entry.label;
+        const c = matchOverrides[key];
+        return { ...m, count: c ?? m.count };
+      }),
+    [baseMatches, matchOverrides],
+  );
+  const matchTotal = useMemo(() => sumMatch(matches), [matches]);
+
+  function bumpMatch(label: string, delta: number) {
+    setMatchOverrides((prev) => {
+      const cur = prev[label] ?? 1;
+      const next = Math.max(0, cur + delta);
+      return { ...prev, [label]: next };
+    });
+  }
+
+  function applyMatchEstimate() {
+    setCalories(String(matchTotal.calories));
+    setCarbG(String(matchTotal.carbG));
+    setProteinG(String(matchTotal.proteinG));
+    setFatG(String(matchTotal.fatG));
+  }
 
   function applyLibrary(item: MealLibraryItem) {
     setMenu(item.name + (item.description ? ` — ${item.description}` : ""));
@@ -204,11 +240,74 @@ export function MealForm({
           required
           rows={2}
           value={menu}
-          onChange={(e) => setMenu(e.target.value)}
-          placeholder="예: 닭가슴살 샐러드 + 삶은 달걀"
+          onChange={(e) => {
+            setMenu(e.target.value);
+            setMatchOverrides({});
+          }}
+          placeholder="예: 닭가슴살 100g + 현미밥 1/2공기 + 샐러드"
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
+
+      {matches.length > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <span className="text-sm font-medium text-amber-900">
+                메뉴에서 인식된 음식
+              </span>
+              <span className="ml-2 text-[11px] text-amber-800">
+                ±로 인분 조정 가능 · 수량 자동 인식 안 됨
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={applyMatchEstimate}
+              className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700"
+            >
+              추정값 칼로리에 적용 (≈{matchTotal.calories}kcal)
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {matches.map((m) => (
+              <div
+                key={m.entry.label}
+                className="flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs"
+              >
+                <button
+                  type="button"
+                  onClick={() => bumpMatch(m.entry.label, -1)}
+                  className="rounded-full px-1 text-amber-700 hover:bg-amber-100"
+                  aria-label="감소"
+                >
+                  −
+                </button>
+                <span className="font-medium">
+                  {m.entry.label}
+                </span>
+                <span className="text-muted-foreground">
+                  ×{m.count}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({m.entry.portion}, {m.entry.calories}kcal)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => bumpMatch(m.entry.label, +1)}
+                  className="rounded-full px-1 text-amber-700 hover:bg-amber-100"
+                  aria-label="증가"
+                >
+                  +
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 text-[11px] text-muted-foreground">
+            합계 ≈ {matchTotal.calories}kcal · C{matchTotal.carbG} P
+            {matchTotal.proteinG} F{matchTotal.fatG}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="칼로리 (kcal)">
