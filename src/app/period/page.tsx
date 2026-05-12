@@ -45,7 +45,7 @@ export default async function PeriodPage({
       action={
         <Link
           href={`/period/new${filter !== "전체" ? `?subject=${encodeURIComponent(filter)}` : ""}`}
-          className="rounded-md bg-rose-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-600"
+          className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
           + 수동 입력
         </Link>
@@ -131,7 +131,7 @@ function SubjectSummaryCard({
       {ongoing ? (
         <div className="space-y-2">
           <div>
-            <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-medium text-white">
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700">
               진행 중
             </span>
             <div className="mt-1 text-sm">
@@ -150,7 +150,7 @@ function SubjectSummaryCard({
             />
             <button
               type="submit"
-              className="w-full rounded-md bg-rose-500 px-3 py-2 text-sm font-medium text-white hover:bg-rose-600"
+              className="w-full rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
             >
               오늘 종료
             </button>
@@ -171,7 +171,7 @@ function SubjectSummaryCard({
             <input type="hidden" name="subject" value={subject} />
             <button
               type="submit"
-              className="w-full rounded-md bg-rose-500 px-3 py-2 text-sm font-medium text-white hover:bg-rose-600"
+              className="w-full rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
             >
               오늘 시작
             </button>
@@ -271,7 +271,7 @@ function CombinedList({
     );
   }
   return (
-    <ul className="rounded-lg border bg-card divide-y">
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {cycles.map((c) => {
         const year = c.startDate.slice(0, 4);
         const days = c.endDate ? daysBetween(c.startDate, c.endDate) + 1 : null;
@@ -280,50 +280,50 @@ function CombinedList({
             c.subject as keyof typeof PERSON_COLORS
           ]) ?? PERSON_COLORS["전체"];
         return (
-          <li key={c.id}>
-            <Link
-              href={`/period/${year}/${c.id}`}
-              className="flex items-center justify-between gap-3 p-4 hover:bg-accent/40"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  {showSubject && (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                        colors.pillActive,
-                      )}
-                    >
-                      {c.subject}
-                    </span>
+          <Link
+            key={c.id}
+            href={`/period/${year}/${c.id}`}
+            className="block rounded-lg border bg-card p-3 hover:bg-accent/40"
+          >
+            <div className="flex flex-wrap items-center gap-1.5 text-sm">
+              {showSubject && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    colors.pillActive,
                   )}
-                  <span>
-                    {c.startDate}
-                    {c.endDate && (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        ~ {c.endDate}
-                      </span>
-                    )}
+                >
+                  {c.subject}
+                </span>
+              )}
+              {!c.endDate && (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] text-rose-700">
+                  진행 중
+                </span>
+              )}
+              <span className="font-medium">
+                {c.startDate.slice(5)}
+                {c.endDate && (
+                  <span className="text-muted-foreground">
+                    {" ~ "}{c.endDate.slice(5)}
                   </span>
-                  {!c.endDate && (
-                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] text-rose-900">
-                      진행 중
-                    </span>
-                  )}
-                </div>
-                <div className="mt-0.5 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-                  {days != null && <span>{days}일</span>}
-                  {c.flow && <span>· {MENSTRUATION_LABEL[c.flow]}</span>}
-                  {c.notes && <span className="truncate">· {c.notes}</span>}
-                </div>
-              </div>
-              <span className="text-muted-foreground">›</span>
-            </Link>
-          </li>
+                )}
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+              <span>{c.startDate.slice(0, 4)}</span>
+              {days != null && <span>· {days}일</span>}
+              {c.flow && <span>· {MENSTRUATION_LABEL[c.flow]}</span>}
+            </div>
+            {c.notes && (
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                {c.notes}
+              </p>
+            )}
+          </Link>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -353,7 +353,7 @@ function StartCard({
         <input type="hidden" name="subject" value={subject} />
         <button
           type="submit"
-          className="w-full rounded-md bg-rose-500 px-4 py-3 text-sm font-medium text-white hover:bg-rose-600 sm:w-auto"
+          className="w-full rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 hover:bg-rose-100 sm:w-auto"
         >
           오늘 ({today.slice(5)}) 생리 시작
         </button>
@@ -374,7 +374,7 @@ function OngoingCard({
   return (
     <div className="space-y-3">
       <div>
-        <span className="rounded-full bg-rose-500 px-2.5 py-0.5 text-xs font-medium text-white">
+        <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-700">
           진행 중
         </span>
         <div className="mt-1.5 text-sm">
@@ -388,7 +388,7 @@ function OngoingCard({
           <input type="hidden" name="year" value={year} />
           <button
             type="submit"
-            className="rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+            className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
           >
             오늘 ({today.slice(5)}) 종료
           </button>
