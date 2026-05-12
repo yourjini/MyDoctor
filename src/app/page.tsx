@@ -1,4 +1,5 @@
 import { PageShell } from "@/components/PageShell";
+import { type CalendarEvent } from "@/components/Calendar";
 import { DashboardView, type UpcomingAppointment } from "@/components/dashboard/DashboardView";
 import type { LanhaSnapshot } from "@/components/dashboard/LanhaTodayCard";
 import {
@@ -6,6 +7,7 @@ import {
   listAppointments,
   listHealthLogs,
   listMeals,
+  listVisits,
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
 import { calorieTargetFor, sumCalories } from "@/lib/calorie";
@@ -21,11 +23,12 @@ export default async function HomePage({
   const sp = await searchParams;
   const initialSubject = asPerson(sp.subject);
 
-  // 대시보드는 박란하 추적 + 다가오는 예약만 — visits/checkups는 각 페이지에서.
-  const [allAppts, allHealth, allMeals, profile] = await Promise.all([
+  // 캘린더는 visits + appointments. health/meals는 박란하 스냅샷용.
+  const [allAppts, allHealth, allMeals, allVisits, profile] = await Promise.all([
     listAppointments(),
     listHealthLogs(),
     listMeals(),
+    listVisits(),
     getProfile("박란하"),
   ]);
 
@@ -78,12 +81,34 @@ export default async function HomePage({
       subject: a.subject,
     }));
 
+  // 캘린더 이벤트 (visits + appointments)
+  const calendarEvents: CalendarEvent[] = [
+    ...allVisits.map((v) => ({
+      id: v.id,
+      date: v.date,
+      title: `${v.hospitalName} · ${v.diagnosis}`,
+      type: "visit" as const,
+      subject: v.subject,
+      href: `/visits/${v.date.slice(0, 4)}/${v.id}`,
+    })),
+    ...allAppts.map((a) => ({
+      id: a.id,
+      date: a.datetime.slice(0, 10),
+      title: `${a.hospitalName}${a.reason ? ` · ${a.reason}` : ""}`,
+      type: "appointment" as const,
+      subject: a.subject,
+      href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
+    })),
+  ];
+
   return (
     <PageShell title="오늘">
       <DashboardView
         initialSubject={initialSubject}
         snapshot={snapshot}
         upcomingAppts={upcomingAppts}
+        calendarEvents={calendarEvents}
+        todayKey={todayKey}
       />
     </PageShell>
   );

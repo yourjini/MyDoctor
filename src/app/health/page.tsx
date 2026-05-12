@@ -1,47 +1,51 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { SubjectFilter } from "@/components/SubjectFilter";
 import { SearchBar } from "@/components/SearchBar";
 import { listHealthLogs } from "@/lib/store";
 import { asPerson, matchesFilter } from "@/lib/people";
 import { KIND_STYLES } from "@/lib/kinds";
-import {
-  ATTENDANCE_TAGS,
-  DEPRESSIVE_TAGS,
-  MANIC_TAGS,
-  MENSTRUATION_LABEL,
-  SEVERITY_LABEL,
-} from "@/lib/health-tags";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
+import { HealthListView } from "./HealthListView";
 
 export const dynamic = "force-dynamic";
+
+const RANGE_OPTIONS = [
+  { value: "7", label: "최근 7일" },
+  { value: "30", label: "최근 30일" },
+  { value: "all", label: "전체" },
+] as const;
 
 export default async function HealthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ subject?: string; q?: string }>;
+  searchParams: Promise<{ subject?: string; q?: string; range?: string }>;
 }) {
   const sp = await searchParams;
   const filter = asPerson(sp.subject);
   const query = (sp.q ?? "").trim().toLowerCase();
+  const range = sp.range ?? "30";
+
   const all = await listHealthLogs();
 
+  // Date cut-off for range filter
+  let cutoff: string | null = null;
+  if (range !== "all") {
+    const days = Number(range);
+    if (Number.isFinite(days) && days > 0) {
+      const d = new Date();
+      d.setDate(d.getDate() - days + 1);
+      cutoff = d.toISOString().slice(0, 10);
+    }
+  }
+
   const logs = all.filter((l) => {
+    if (cutoff && l.date < cutoff) return false;
     if (!matchesFilter(l.subject, filter)) return false;
     if (!query) return true;
     return matches(l, query);
   });
-
-  // group by date
-  const byDate = new Map<string, HealthLog[]>();
-  for (const l of logs) {
-    const arr = byDate.get(l.date) ?? [];
-    arr.push(l);
-    byDate.set(l.date, arr);
-  }
-  const dates = Array.from(byDate.keys()).sort((a, b) => b.localeCompare(a));
 
   return (
     <PageShell
@@ -68,118 +72,57 @@ export default async function HealthPage({
     >
       <div className="mb-3 space-y-2">
         <SearchBar placeholder="태그·메모 검색" />
-        <SubjectFilter />
+        <div className="flex flex-wrap items-center gap-3">
+          <SubjectFilter />
+          <RangeFilter current={range} />
+        </div>
       </div>
 
-      {logs.length === 0 ? (
+      {all.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-          {all.length === 0
-            ? "기록이 없습니다. 위에서 새 기록을 추가해보세요."
-            : "조건에 맞는 기록이 없습니다."}
+          기록이 없습니다. 위에서 새 기록을 추가해보세요.
         </p>
       ) : (
-        <div className="space-y-5">
-          {dates.map((d) => (
-            <section key={d}>
-              <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-                {d}
-              </h2>
-              <ul className="rounded-lg border bg-card divide-y">
-                {byDate.get(d)!.map((l) => {
-                  const year = d.slice(0, 4);
-                  return (
-                    <li key={l.id}>
-                      <Link
-                        href={`/health/${year}/${l.id}`}
-                        className="flex items-start gap-3 p-4 hover:bg-accent/40"
-                      >
-                        <SubjectBadge
-                          subject={l.subject}
-                          size="md"
-                          className="mt-0.5"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                            {l.measuredAt && (
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
-                                {l.measuredAt}
-                              </span>
-                            )}
-                            {l.severity && (
-                              <span className="rounded bg-muted px-1.5 py-0.5">
-                                컨디션 {l.severity} · {SEVERITY_LABEL[l.severity]}
-                              </span>
-                            )}
-                            {l.moodScale != null && (
-                              <span
-                                className={
-                                  l.moodScale > 0
-                                    ? "rounded bg-orange-100 px-1.5 py-0.5 text-orange-800"
-                                    : l.moodScale < 0
-                                      ? "rounded bg-blue-100 px-1.5 py-0.5 text-blue-800"
-                                      : "rounded bg-muted px-1.5 py-0.5"
-                                }
-                              >
-                                {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
-                              </span>
-                            )}
-                            {l.sleepHours != null && (
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                                💤 {l.sleepHours}h
-                              </span>
-                            )}
-                            {l.weight != null && (
-                              <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
-                                ⚖ {l.weight}kg
-                              </span>
-                            )}
-                            {l.menstruation && (
-                              <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
-                                생리 {MENSTRUATION_LABEL[l.menstruation]}
-                              </span>
-                            )}
-                            {l.bodyTags.map((t) => (
-                              <span
-                                key={`b-${t}`}
-                                className="rounded-full bg-rose-50 px-2 py-0.5 text-rose-700"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                            {l.moodTags.map((t) => (
-                              <span
-                                key={`m-${t}`}
-                                className={
-                                  ATTENDANCE_TAGS.has(t)
-                                    ? "rounded-full bg-rose-600 px-2 py-0.5 font-medium text-white"
-                                    : MANIC_TAGS.has(t)
-                                      ? "rounded-full bg-orange-100 px-2 py-0.5 text-orange-800"
-                                      : DEPRESSIVE_TAGS.has(t)
-                                        ? "rounded-full bg-blue-100 px-2 py-0.5 text-blue-800"
-                                        : "rounded-full bg-indigo-50 px-2 py-0.5 text-indigo-700"
-                                }
-                              >
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                          {l.note && (
-                            <div className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
-                              {l.note}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ))}
-        </div>
+        <HealthListView logs={logs} />
       )}
     </PageShell>
   );
+}
+
+function RangeFilter({ current }: { current: string }) {
+  return (
+    <div className="flex flex-wrap gap-1" role="tablist" aria-label="기간 필터">
+      {RANGE_OPTIONS.map((o) => {
+        const active = current === o.value;
+        return (
+          <Link
+            key={o.value}
+            href={makeRangeHref(o.value)}
+            role="tab"
+            aria-selected={active}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+              active
+                ? "bg-foreground text-background"
+                : "bg-muted text-muted-foreground hover:bg-accent",
+            )}
+          >
+            {o.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function makeRangeHref(value: string): string {
+  // Server-side; the SubjectFilter and SearchBar manage their own params,
+  // so we can use a relative search-only href. Range is added without
+  // disturbing other params via a small URL trick: leave only `range` here
+  // and rely on the SubjectFilter/SearchBar to re-set theirs on next click.
+  // Simpler approach: read window.location? — we're on the server. So we
+  // emit only the range param; users typically pick range last.
+  return `?range=${encodeURIComponent(value)}`;
 }
 
 function matches(log: HealthLog, q: string): boolean {

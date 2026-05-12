@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { type CalendarEvent } from "@/components/Calendar";
 import { KindChip } from "@/components/KindChip";
 import { SubjectBadge } from "@/components/SubjectBadge";
+import { CollapsibleCalendar } from "./CollapsibleCalendar";
 import { LanhaTodayCard, type LanhaSnapshot } from "./LanhaTodayCard";
 import { QuickActions } from "./QuickActions";
 import { PEOPLE, PERSON_COLORS, asPerson, matchesFilter, type Person } from "@/lib/people";
@@ -21,10 +23,14 @@ export function DashboardView({
   initialSubject,
   snapshot,
   upcomingAppts,
+  calendarEvents,
+  todayKey,
 }: {
   initialSubject: Person;
   snapshot: LanhaSnapshot | null;
   upcomingAppts: UpcomingAppointment[];
+  calendarEvents: CalendarEvent[];
+  todayKey: string;
 }) {
   const [subject, setSubject] = useState<Person>(initialSubject);
 
@@ -35,6 +41,17 @@ export function DashboardView({
         .slice(0, 4),
     [upcomingAppts, subject],
   );
+
+  const visibleEvents = useMemo(
+    () => calendarEvents.filter((e) => matchesFilter(e.subject, subject)),
+    [calendarEvents, subject],
+  );
+
+  const monthBadge = useMemo(() => {
+    const ym = todayKey.slice(0, 7);
+    const count = visibleEvents.filter((e) => e.date.startsWith(ym)).length;
+    return `이번 달 ${count}건`;
+  }, [visibleEvents, todayKey]);
 
   const showLanha = subject === "전체" || subject === "박란하";
 
@@ -94,6 +111,12 @@ export function DashboardView({
             </ul>
           )}
         </section>
+
+        <CollapsibleCalendar
+          events={visibleEvents}
+          defaultOpen={true}
+          badge={monthBadge}
+        />
 
         <Sitemap />
       </div>
