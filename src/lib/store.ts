@@ -14,7 +14,9 @@ import type {
   Attachment,
   Checkup,
   HealthLog,
+  Meal,
   MenstrualCycle,
+  PersonProfile,
   Visit,
 } from "./types";
 
@@ -40,6 +42,18 @@ const healthFile = (year: string, id: string) =>
 const periodDir = (year: string) => `data/period/${year}`;
 const periodFile = (year: string, id: string) =>
   `${periodDir(year)}/${id}.json`;
+
+const profileFile = (person: string) =>
+  `data/profiles/${encodeURIComponent(person)}.json`;
+
+const mealDir = (year: string, month: string) =>
+  `data/meals/${year}/${month}`;
+const mealFile = (year: string, month: string, id: string) =>
+  `${mealDir(year, month)}/${id}.json`;
+
+function ymOf(date: string): { year: string; month: string } {
+  return { year: date.slice(0, 4), month: date.slice(5, 7) };
+}
 
 function yearOf(date: string): string {
   return date.slice(0, 4);
@@ -531,6 +545,114 @@ export async function deleteMenstrualCycle(
   id: string,
 ): Promise<void> {
   await deleteFile(periodFile(year, id), `delete period cycle ${id}`);
+}
+
+// ============================================================
+// Person profiles
+// ============================================================
+
+export async function getProfile(
+  person: string,
+): Promise<PersonProfile | null> {
+  return readJSON<PersonProfile>(profileFile(person));
+}
+
+export async function upsertProfile(
+  person: string,
+  patch: Omit<PersonProfile, "person" | "updatedAt">,
+): Promise<PersonProfile> {
+  const current = await getProfile(person);
+  const next: PersonProfile = {
+    ...(current ?? { person }),
+    ...patch,
+    person,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(profileFile(person), next, `update profile ${person}`);
+  } catch (err) {
+    throw new Error(`프로필 저장 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+// ============================================================
+// Meals
+// ============================================================
+
+export async function listMeals(): Promise<Meal[]> {
+  const all = await listAllJSON<Meal>("data/meals");
+  return all.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    const at = a.time ?? a.createdAt.slice(11, 16);
+    const bt = b.time ?? b.createdAt.slice(11, 16);
+    if (at !== bt) return bt.localeCompare(at);
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+}
+
+export async function getMeal(
+  year: string,
+  month: string,
+  id: string,
+): Promise<Meal | null> {
+  return readJSON<Meal>(mealFile(year, month, id));
+}
+
+export async function createMeal(
+  input: Omit<Meal, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<Meal> {
+  const id = uuid();
+  const { year, month } = ymOf(input.date);
+  const now = new Date().toISOString();
+  const meal: Meal = {
+    id,
+    kind: "meal",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(
+      mealFile(year, month, id),
+      meal,
+      `add meal ${input.date} ${input.slot}`,
+    );
+  } catch (err) {
+    throw new Error(`식사 저장 실패: ${describeError(err)}`);
+  }
+  return meal;
+}
+
+export async function updateMeal(
+  year: string,
+  month: string,
+  id: string,
+  patch: Partial<Meal>,
+): Promise<Meal | null> {
+  const current = await getMeal(year, month, id);
+  if (!current) return null;
+  const next: Meal = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "meal",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(mealFile(year, month, id), next, `update meal ${id}`);
+  } catch (err) {
+    throw new Error(`식사 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteMeal(
+  year: string,
+  month: string,
+  id: string,
+): Promise<void> {
+  await deleteFile(mealFile(year, month, id), `delete meal ${id}`);
 }
 
 // ============================================================

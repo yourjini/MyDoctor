@@ -12,6 +12,8 @@ const links = [
   { href: "/checkups", label: "건강검진" },
   { href: "/health", label: "건강일지" },
   { href: "/period", label: "생리주기" },
+  { href: "/meals", label: "식단" },
+  { href: "/profile", label: "프로필" },
 ];
 
 export function Nav() {

@@ -19,9 +19,11 @@ import { BipolarAwareFields } from "../../BipolarFields";
 export function HealthEditView({
   log,
   year,
+  latestBipolarWeight,
 }: {
   log: HealthLog;
   year: string;
+  latestBipolarWeight?: number;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,6 +54,7 @@ export function HealthEditView({
         defaultWeight={log.weight}
         defaultMoodTags={log.moodTags}
         defaultMeasuredAt={log.measuredAt}
+        latestBipolarWeight={latestBipolarWeight}
       />
 
       <Field label="컨디션 (전체)">

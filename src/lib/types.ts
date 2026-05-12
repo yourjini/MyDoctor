@@ -102,9 +102,52 @@ export type MenstrualCycle = {
   updatedAt: string;
 };
 
+export type ActivityLevel = "low" | "light" | "moderate" | "active";
+
+export type PersonProfile = {
+  person: string; // 박란하 / 박범진 / 최진희 (전체는 프로필 없음)
+  birthDate?: string; // YYYY-MM-DD
+  heightCm?: number;
+  startWeightKg?: number; // 약 시작 전 등 기준 체중
+  startWeightDate?: string; // YYYY-MM-DD
+  targetWeightKg?: number;
+  activity?: ActivityLevel;
+  dietStyle?: "lowcarb-lowfat" | "mediterranean" | "balanced";
+  allergies?: string[]; // 알레르기·기피
+  notes?: string;
+  updatedAt: string;
+};
+
+export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type MealMacros = {
+  carbG?: number;
+  proteinG?: number;
+  fatG?: number;
+};
+
+export type Meal = {
+  id: string;
+  kind: "meal";
+  subject: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:MM
+  slot: MealSlot;
+  menu: string;
+  calories?: number;
+  macros?: MealMacros;
+  tags: string[];
+  rating?: number; // 1-5
+  note?: string;
+  fromLibraryId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AnyRecord =
   | Visit
   | Appointment
   | Checkup
   | HealthLog
-  | MenstrualCycle;
+  | MenstrualCycle
+  | Meal;

@@ -24,6 +24,7 @@ export function BipolarAwareFields({
   defaultWeight,
   defaultMoodTags,
   defaultMeasuredAt,
+  latestBipolarWeight,
 }: {
   defaultDate: string;
   defaultSubject?: string;
@@ -32,6 +33,8 @@ export function BipolarAwareFields({
   defaultWeight?: number;
   defaultMoodTags?: string[];
   defaultMeasuredAt?: string;
+  /** 박란하 최근 체중 — 새 기록일 때 자동 채움용 */
+  latestBipolarWeight?: number;
 }) {
   const [subject, setSubject] = useState(defaultSubject ?? DEFAULT_PERSON);
   const isBipolar = subject === BIPOLAR_SUBJECT;
@@ -111,18 +114,26 @@ export function BipolarAwareFields({
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">
-                체중 <span className="text-xs text-muted-foreground">(kg)</span>
+                체중 <span className="text-xs text-rose-600">*</span>
+                <span className="text-xs text-muted-foreground"> (kg)</span>
               </label>
               <input
                 type="number"
                 name="weight"
-                defaultValue={defaultWeight ?? ""}
-                min={0}
+                required
+                defaultValue={defaultWeight ?? latestBipolarWeight ?? ""}
+                min={20}
                 max={300}
                 step={0.1}
-                placeholder="kg (예: 58.4)"
+                placeholder="kg"
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
+              {!defaultWeight && latestBipolarWeight != null && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  최근 기록 {latestBipolarWeight}kg 자동 입력 · 바꾸지 않으면
+                  그대로 저장
+                </p>
+              )}
             </div>
           </div>
 

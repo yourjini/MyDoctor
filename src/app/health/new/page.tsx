@@ -6,6 +6,7 @@ import {
   MOOD_TAG_GROUPS,
   SEVERITY_LABEL,
 } from "@/lib/health-tags";
+import { listHealthLogs } from "@/lib/store";
 import { createHealthLogAction } from "../actions";
 import { BipolarAwareFields } from "../BipolarFields";
 
@@ -18,13 +19,21 @@ export default async function NewHealthLogPage({
   const today = new Date().toISOString().slice(0, 10);
   const initialDate = isValidDate(queryDate) ? queryDate! : today;
 
+  const healthLogs = await listHealthLogs();
+  const latestBipolarWeight = healthLogs
+    .filter((l) => (l.subject ?? "전체") === "박란하" && l.weight != null)
+    .sort((a, b) => b.date.localeCompare(a.date))[0]?.weight;
+
   return (
     <PageShell title="새 건강일지">
       <form
         action={createHealthLogAction}
         className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"
       >
-        <BipolarAwareFields defaultDate={initialDate} />
+        <BipolarAwareFields
+          defaultDate={initialDate}
+          latestBipolarWeight={latestBipolarWeight}
+        />
 
         <Field label="컨디션 (전체)">
           <SeverityRadios />

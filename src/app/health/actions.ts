@@ -98,6 +98,9 @@ export async function createHealthLogAction(formData: FormData) {
   const sleepHours = isBipolarSubject ? parseSleepHours(formData) : undefined;
   const measuredAt = isBipolarSubject ? parseMeasuredAt(formData) : undefined;
   const weight = isBipolarSubject ? parseWeight(formData) : undefined;
+  if (isBipolarSubject && weight == null) {
+    throw new Error("란하 기록은 체중을 입력해야 합니다 (kg)");
+  }
 
   await createHealthLog({
     date,
@@ -139,6 +142,11 @@ export async function updateHealthLogAction(formData: FormData) {
     ]),
   );
 
+  const weightVal = isBipolarSubject ? parseWeight(formData) : undefined;
+  if (isBipolarSubject && weightVal == null) {
+    throw new Error("란하 기록은 체중을 입력해야 합니다 (kg)");
+  }
+
   const patch: Partial<HealthLog> = {
     date: String(formData.get("date") || ""),
     subject,
@@ -150,7 +158,7 @@ export async function updateHealthLogAction(formData: FormData) {
     moodScale: isBipolarSubject ? parseMoodScale(formData) : undefined,
     sleepHours: isBipolarSubject ? parseSleepHours(formData) : undefined,
     measuredAt: isBipolarSubject ? parseMeasuredAt(formData) : undefined,
-    weight: isBipolarSubject ? parseWeight(formData) : undefined,
+    weight: weightVal,
   };
 
   await updateHealthLog(year, id, patch);

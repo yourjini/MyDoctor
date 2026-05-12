@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { KindChip } from "@/components/KindChip";
-import { getHealthLog } from "@/lib/store";
+import { getHealthLog, listHealthLogs } from "@/lib/store";
 import { deleteHealthLogAction } from "../../actions";
 import { formatDate } from "@/lib/utils";
 import { HealthEditView } from "./HealthEditView";
@@ -17,6 +17,16 @@ export default async function HealthDetail({
   const { year, id } = await params;
   const log = await getHealthLog(year, id);
   if (!log) notFound();
+
+  const healthLogs = await listHealthLogs();
+  const latestBipolarWeight = healthLogs
+    .filter(
+      (l) =>
+        (l.subject ?? "전체") === "박란하" &&
+        l.weight != null &&
+        l.id !== log.id,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))[0]?.weight;
 
   return (
     <PageShell
@@ -34,7 +44,11 @@ export default async function HealthDetail({
         <KindChip kind="health" />
       </div>
 
-      <HealthEditView log={log} year={year} />
+      <HealthEditView
+        log={log}
+        year={year}
+        latestBipolarWeight={latestBipolarWeight}
+      />
 
       <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">
         <div>
