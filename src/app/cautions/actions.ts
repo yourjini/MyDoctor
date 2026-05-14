@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { asPerson } from "@/lib/people";
+import { CAUTION_SEEDS } from "@/lib/caution-seeds";
 import {
   createCaution,
   deleteCaution,
+  listCautions,
   updateCaution,
 } from "@/lib/store";
 import type { CautionItem, CautionSeverity } from "@/lib/types";
@@ -91,5 +93,25 @@ export async function deleteCautionAction(formData: FormData) {
   if (!id) throw new Error("id 누락");
   await deleteCaution(id);
   revalidatePath("/cautions");
+  redirect("/cautions");
+}
+
+export async function seedCautionsAction() {
+  const existing = await listCautions();
+  const existingNames = new Set(existing.map((c) => c.name));
+
+  let added = 0;
+  for (const seed of CAUTION_SEEDS) {
+    // 같은 이름이 이미 있으면 스킵 — 사용자가 이미 적었을 가능성
+    if (existingNames.has(seed.name)) continue;
+    await createCaution(seed);
+    added += 1;
+  }
+
+  revalidatePath("/cautions");
+  if (added === 0) {
+    // 이미 다 등록되어 있음. 그냥 새로고침.
+    redirect("/cautions");
+  }
   redirect("/cautions");
 }

@@ -4,6 +4,7 @@ import { SubjectBadge } from "@/components/SubjectBadge";
 import { listCautions } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { CautionItem, CautionSeverity } from "@/lib/types";
+import { seedCautionsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -57,9 +58,22 @@ export default async function CautionsPage() {
       </p>
 
       {items.length === 0 ? (
-        <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-          등록된 항목이 없습니다. 우상단 &quot;+ 항목 추가&quot;로 시작하세요.
-        </p>
+        <div className="rounded-lg border bg-card p-6 text-center">
+          <p className="mb-4 text-sm text-muted-foreground">
+            등록된 항목이 없습니다.
+          </p>
+          <form action={seedCautionsAction}>
+            <button
+              type="submit"
+              className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+            >
+              📚 박란하 약물 기반 예시 9건 한 번에 등록
+            </button>
+          </form>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            등록 후 각 항목을 편집해서 URL·메모를 보강할 수 있어요
+          </p>
+        </div>
       ) : (
         <div className="space-y-6">
           {SEVERITY_ORDER.map((sev) => {
