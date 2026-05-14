@@ -19,9 +19,9 @@ const VIEW_STORAGE_KEY = "mydoctor-health-view";
 
 export function HealthListView({ logs }: { logs: HealthLog[] }) {
   const [view, setView] = useState<ViewMode>(() => {
-    if (typeof window === "undefined") return "card";
+    if (typeof window === "undefined") return "list";
     const saved = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    return saved === "list" ? "list" : "card";
+    return saved === "card" ? "card" : "list";
   });
 
   function changeView(v: ViewMode) {
@@ -58,7 +58,7 @@ export function HealthListView({ logs }: { logs: HealthLog[] }) {
       ) : view === "card" ? (
         <CardView dates={dates} byDate={byDate} />
       ) : (
-        <ListView dates={dates} byDate={byDate} />
+        <ListView logs={logs} />
       )}
     </>
   );
@@ -233,93 +233,86 @@ function TagPill({
 }
 
 function ListView({
-  dates,
-  byDate,
+  logs,
 }: {
-  dates: string[];
-  byDate: Map<string, HealthLog[]>;
+  logs: HealthLog[];
 }) {
   return (
-    <div className="space-y-5">
-      {dates.map((d) => (
-        <section key={d}>
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-            {d}
-          </h2>
-          <ul className="rounded-lg border bg-card divide-y">
-            {byDate.get(d)!.map((l) => {
-              const year = d.slice(0, 4);
-              return (
-                <li key={l.id}>
-                  <Link
-                    href={`/health/${year}/${l.id}`}
-                    className="flex items-start gap-3 p-3 hover:bg-accent/40"
-                  >
-                    <SubjectBadge
-                      subject={l.subject}
-                      size="md"
-                      className="mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                        {l.measuredAt && (
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
-                            {l.measuredAt}
-                          </span>
-                        )}
-                        {l.severity && (
-                          <span className="rounded bg-muted px-1.5 py-0.5">
-                            {SEVERITY_LABEL[l.severity]}
-                          </span>
-                        )}
-                        {l.moodScale != null && (
-                          <span
-                            className={
-                              l.moodScale > 0
-                                ? "rounded bg-orange-100 px-1.5 py-0.5 text-orange-800"
-                                : l.moodScale < 0
-                                  ? "rounded bg-blue-100 px-1.5 py-0.5 text-blue-800"
-                                  : "rounded bg-muted px-1.5 py-0.5"
-                            }
-                          >
-                            {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
-                          </span>
-                        )}
-                        {l.sleepHours != null && (
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                            💤 {l.sleepHours}h
-                          </span>
-                        )}
-                        {l.weight != null && (
-                          <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
-                            ⚖ {l.weight}kg
-                          </span>
-                        )}
-                        {l.menstruation && (
-                          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
-                            생리 {MENSTRUATION_LABEL[l.menstruation]}
-                          </span>
-                        )}
-                        {l.bodyTags.map((t) => (
-                          <TagPill key={`b-${t}`} tag={t} kind="body" />
-                        ))}
-                        {l.moodTags.map((t) => (
-                          <TagPill key={`m-${t}`} tag={t} kind="mood" />
-                        ))}
-                      </div>
-                      {l.note && (
-                        <div className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
-                          {l.note}
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
-    </div>
+    <ul className="overflow-hidden rounded-lg border bg-card divide-y">
+      {logs.map((l) => {
+        const year = l.date.slice(0, 4);
+        return (
+          <li key={l.id}>
+            <Link
+              href={`/health/${year}/${l.id}`}
+              className="flex items-start gap-3 p-3 hover:bg-accent/40"
+            >
+              <div className="flex shrink-0 flex-col items-center gap-1">
+                <SubjectBadge subject={l.subject} size="sm" />
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {l.date.slice(5)}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {l.date.slice(0, 4)}
+                  </span>
+                  {l.measuredAt && (
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
+                      {l.measuredAt}
+                    </span>
+                  )}
+                  {l.severity && (
+                    <span className="rounded bg-muted px-1.5 py-0.5">
+                      {SEVERITY_LABEL[l.severity]}
+                    </span>
+                  )}
+                  {l.moodScale != null && (
+                    <span
+                      className={
+                        l.moodScale > 0
+                          ? "rounded bg-orange-100 px-1.5 py-0.5 text-orange-800"
+                          : l.moodScale < 0
+                            ? "rounded bg-blue-100 px-1.5 py-0.5 text-blue-800"
+                            : "rounded bg-muted px-1.5 py-0.5"
+                      }
+                    >
+                      기분 {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
+                    </span>
+                  )}
+                  {l.sleepHours != null && (
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
+                      💤 {l.sleepHours}h
+                    </span>
+                  )}
+                  {l.weight != null && (
+                    <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
+                      ⚖ {l.weight}kg
+                    </span>
+                  )}
+                  {l.menstruation && (
+                    <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
+                      생리 {MENSTRUATION_LABEL[l.menstruation]}
+                    </span>
+                  )}
+                  {l.bodyTags.map((t) => (
+                    <TagPill key={`b-${t}`} tag={t} kind="body" />
+                  ))}
+                  {l.moodTags.map((t) => (
+                    <TagPill key={`m-${t}`} tag={t} kind="mood" />
+                  ))}
+                </div>
+                {l.note && (
+                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                    {l.note}
+                  </div>
+                )}
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

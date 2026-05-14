@@ -39,21 +39,21 @@ export default async function NewHealthLogPage({
           <SeverityRadios />
         </Field>
 
-        <Field label="아픈 곳 / 증상">
+        <CollapsibleField label="아픈 곳 / 증상">
           <TagPicker
             name="bodyTags"
             groups={BODY_TAG_GROUPS}
             selectedClass="bg-rose-500 text-white border-rose-500"
           />
-        </Field>
+        </CollapsibleField>
 
-        <Field label="기분 / 심리">
+        <CollapsibleField label="기분 / 심리">
           <TagPicker
             name="moodTags"
             groups={MOOD_TAG_GROUPS}
             selectedClass="bg-indigo-500 text-white border-indigo-500"
           />
-        </Field>
+        </CollapsibleField>
 
         <Field label="생리">
           <MenstruationRadios />
@@ -102,6 +102,29 @@ function Field({
       </label>
       {children}
     </div>
+  );
+}
+
+function CollapsibleField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="group rounded-md border bg-background">
+      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium hover:bg-accent/50">
+        <span>{label}</span>
+        <span className="text-xs text-muted-foreground group-open:hidden">
+          펼치기 ▾
+        </span>
+        <span className="hidden text-xs text-muted-foreground group-open:inline">
+          접기 ▴
+        </span>
+      </summary>
+      <div className="border-t p-3">{children}</div>
+    </details>
   );
 }
 
