@@ -47,3 +47,7 @@ next-env.d.ts
 !public/**/*.jpg
 !public/**/*.jpeg
 !public/**/*.gif
+# Scratch reference docs the user drops into the repo root
+주의음식.txt
+HANDOFF.md
+MOBILE_SETUP.md

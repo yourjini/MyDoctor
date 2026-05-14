@@ -29,6 +29,7 @@ const ALL_LINKS: Record<string, LeafLink> = {
   chart: { href: "/health/chart", label: "그래프", icon: IconChart },
   period: { href: "/period", label: "생리주기", icon: IconDrop },
   meals: { href: "/meals", label: "식단", icon: IconUtensils },
+  cautions: { href: "/cautions", label: "주의음식", icon: IconAlert },
   diary: { href: "/diary", label: "다이어리", icon: IconLock },
   profile: { href: "/profile", label: "프로필", icon: IconUser },
 };
@@ -47,6 +48,7 @@ const MORE_LINKS = [
   ALL_LINKS.checkups,
   ALL_LINKS.period,
   ALL_LINKS.chart,
+  ALL_LINKS.cautions,
   ALL_LINKS.diary,
   ALL_LINKS.profile,
 ];
@@ -64,6 +66,7 @@ const DESKTOP_GROUPS: { label: string; items: LeafLink[] }[] = [
       ALL_LINKS.chart,
       ALL_LINKS.period,
       ALL_LINKS.meals,
+      ALL_LINKS.cautions,
       ALL_LINKS.diary,
     ],
   },
@@ -448,6 +451,17 @@ function IconLock({ className }: { className?: string }) {
     <>
       <rect x="5" y="11" width="14" height="9" rx="2" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>,
+    className,
+  );
+}
+
+function IconAlert({ className }: { className?: string }) {
+  return svg(
+    <>
+      <path d="M12 3 2 21h20L12 3z" />
+      <line x1="12" y1="10" x2="12" y2="14" />
+      <line x1="12" y1="17" x2="12" y2="17" />
     </>,
     className,
   );

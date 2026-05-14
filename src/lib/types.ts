@@ -144,6 +144,24 @@ export type Meal = {
   updatedAt: string;
 };
 
+// Food / drink / substance the family should be cautious about,
+// usually because it interacts with 박란하's medications.
+export type CautionSeverity = "danger" | "warning" | "caution";
+
+export type CautionItem = {
+  id: string;
+  kind: "caution";
+  subject: string; // default 박란하
+  name: string; // 맥주, 자몽, 마라탕 etc
+  severity: CautionSeverity;
+  category?: string; // 술 / 카페인 / 자극적 / 식품 / 약물 / 기타
+  medications?: string[]; // 자나팜, 리튬, 콘서타, ...
+  reason?: string; // why — multi-line free text
+  source?: string; // URL or note
+  createdAt: string;
+  updatedAt: string;
+};
+
 // Private diary — separate password lock above app auth.
 // Used for the parent's personal notes about 박란하: condition,
 // upsetting events, concerns. Not surfaced anywhere outside /diary.
@@ -165,4 +183,5 @@ export type AnyRecord =
   | HealthLog
   | MenstrualCycle
   | Meal
-  | DiaryEntry;
+  | DiaryEntry
+  | CautionItem;

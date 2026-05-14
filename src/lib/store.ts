@@ -12,6 +12,7 @@ import {
 import type {
   Appointment,
   Attachment,
+  CautionItem,
   Checkup,
   DiaryEntry,
   HealthLog,
@@ -55,6 +56,9 @@ const mealFile = (year: string, month: string, id: string) =>
 const diaryDir = (year: string) => `data/diary/${year}`;
 const diaryFile = (year: string, id: string) =>
   `${diaryDir(year)}/${id}.json`;
+
+// Cautions: flat, not partitioned by year — small reference list per family.
+const cautionFile = (id: string) => `data/cautions/${id}.json`;
 
 function ymOf(date: string): { year: string; month: string } {
   return { year: date.slice(0, 4), month: date.slice(5, 7) };
@@ -727,6 +731,75 @@ export async function deleteDiaryEntry(
   id: string,
 ): Promise<void> {
   await deleteFile(diaryFile(year, id), `delete diary ${id}`);
+}
+
+// ============================================================
+// Cautions (음식/음료/약물 주의 목록)
+// ============================================================
+
+const SEVERITY_ORDER: Record<string, number> = {
+  danger: 0,
+  warning: 1,
+  caution: 2,
+};
+
+export async function listCautions(): Promise<CautionItem[]> {
+  const all = await listAllJSON<CautionItem>("data/cautions");
+  return all.sort((a, b) => {
+    const sa = SEVERITY_ORDER[a.severity] ?? 99;
+    const sb = SEVERITY_ORDER[b.severity] ?? 99;
+    if (sa !== sb) return sa - sb;
+    return a.name.localeCompare(b.name, "ko");
+  });
+}
+
+export async function getCaution(id: string): Promise<CautionItem | null> {
+  return readJSON<CautionItem>(cautionFile(id));
+}
+
+export async function createCaution(
+  input: Omit<CautionItem, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<CautionItem> {
+  const id = uuid();
+  const now = new Date().toISOString();
+  const item: CautionItem = {
+    id,
+    kind: "caution",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(cautionFile(id), item, `add caution ${input.name}`);
+  } catch (err) {
+    throw new Error(`주의 항목 저장 실패: ${describeError(err)}`);
+  }
+  return item;
+}
+
+export async function updateCaution(
+  id: string,
+  patch: Partial<CautionItem>,
+): Promise<CautionItem | null> {
+  const current = await getCaution(id);
+  if (!current) return null;
+  const next: CautionItem = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "caution",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(cautionFile(id), next, `update caution ${id}`);
+  } catch (err) {
+    throw new Error(`주의 항목 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteCaution(id: string): Promise<void> {
+  await deleteFile(cautionFile(id), `delete caution ${id}`);
 }
 
 // ============================================================
