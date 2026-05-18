@@ -30,6 +30,7 @@ const ALL_LINKS: Record<string, LeafLink> = {
   period: { href: "/period", label: "생리주기", icon: IconDrop },
   meals: { href: "/meals", label: "식단", icon: IconUtensils },
   cautions: { href: "/cautions", label: "주의음식", icon: IconAlert },
+  notes: { href: "/notes", label: "선생님메모", icon: IconNote },
   diary: { href: "/diary", label: "다이어리", icon: IconLock },
   profile: { href: "/profile", label: "프로필", icon: IconUser },
 };
@@ -49,6 +50,7 @@ const MORE_LINKS = [
   ALL_LINKS.period,
   ALL_LINKS.chart,
   ALL_LINKS.cautions,
+  ALL_LINKS.notes,
   ALL_LINKS.diary,
   ALL_LINKS.profile,
 ];
@@ -57,7 +59,12 @@ const MORE_LINKS = [
 const DESKTOP_GROUPS: { label: string; items: LeafLink[] }[] = [
   {
     label: "의료기록",
-    items: [ALL_LINKS.visits, ALL_LINKS.appointments, ALL_LINKS.checkups],
+    items: [
+      ALL_LINKS.visits,
+      ALL_LINKS.appointments,
+      ALL_LINKS.checkups,
+      ALL_LINKS.notes,
+    ],
   },
   {
     label: "건강추적",
@@ -462,6 +469,18 @@ function IconAlert({ className }: { className?: string }) {
       <path d="M12 3 2 21h20L12 3z" />
       <line x1="12" y1="10" x2="12" y2="14" />
       <line x1="12" y1="17" x2="12" y2="17" />
+    </>,
+    className,
+  );
+}
+
+function IconNote({ className }: { className?: string }) {
+  return svg(
+    <>
+      <path d="M4 4h11l5 5v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+      <polyline points="15 4 15 9 20 9" />
+      <line x1="7" y1="13" x2="15" y2="13" />
+      <line x1="7" y1="17" x2="13" y2="17" />
     </>,
     className,
   );

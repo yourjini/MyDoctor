@@ -14,6 +14,7 @@ import type {
   Attachment,
   CautionItem,
   Checkup,
+  ClinicNote,
   DiaryEntry,
   HealthLog,
   Meal,
@@ -59,6 +60,9 @@ const diaryFile = (year: string, id: string) =>
 
 // Cautions: flat, not partitioned by year — small reference list per family.
 const cautionFile = (id: string) => `data/cautions/${id}.json`;
+
+// Clinic notes: flat, lifecycle-based (pending → done). Few open at a time.
+const clinicNoteFile = (id: string) => `data/notes/${id}.json`;
 
 function ymOf(date: string): { year: string; month: string } {
   return { year: date.slice(0, 4), month: date.slice(5, 7) };
@@ -800,6 +804,72 @@ export async function updateCaution(
 
 export async function deleteCaution(id: string): Promise<void> {
   await deleteFile(cautionFile(id), `delete caution ${id}`);
+}
+
+// ============================================================
+// Clinic notes (선생님에게 전달할 사항)
+// ============================================================
+
+export async function listClinicNotes(): Promise<ClinicNote[]> {
+  const all = await listAllJSON<ClinicNote>("data/notes");
+  return all.sort((a, b) => {
+    // pending 먼저, 그 다음 done. 같은 상태 안에서는 최신순.
+    if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
+}
+
+export async function getClinicNote(id: string): Promise<ClinicNote | null> {
+  return readJSON<ClinicNote>(clinicNoteFile(id));
+}
+
+export async function createClinicNote(
+  input: Omit<ClinicNote, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<ClinicNote> {
+  const id = uuid();
+  const now = new Date().toISOString();
+  const note: ClinicNote = {
+    id,
+    kind: "note",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(
+      clinicNoteFile(id),
+      note,
+      `add clinic note ${input.title ?? input.body.slice(0, 30)}`,
+    );
+  } catch (err) {
+    throw new Error(`선생님 메모 저장 실패: ${describeError(err)}`);
+  }
+  return note;
+}
+
+export async function updateClinicNote(
+  id: string,
+  patch: Partial<ClinicNote>,
+): Promise<ClinicNote | null> {
+  const current = await getClinicNote(id);
+  if (!current) return null;
+  const next: ClinicNote = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "note",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(clinicNoteFile(id), next, `update clinic note ${id}`);
+  } catch (err) {
+    throw new Error(`선생님 메모 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteClinicNote(id: string): Promise<void> {
+  await deleteFile(clinicNoteFile(id), `delete clinic note ${id}`);
 }
 
 // ============================================================

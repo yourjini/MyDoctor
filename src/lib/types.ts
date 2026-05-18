@@ -162,6 +162,25 @@ export type CautionItem = {
   updatedAt: string;
 };
 
+// Notes to bring up at the next clinic visit. Standalone checklist
+// — not tied to a specific HealthLog date so questions like "약 줄여
+// 달라고 물어보기" can sit alongside symptom observations.
+export type ClinicNoteStatus = "pending" | "done";
+
+export type ClinicNote = {
+  id: string;
+  kind: "note";
+  subject: string; // 박란하 / 박범진 / 최진희 / 전체
+  hospitalType?: string; // 정신건강의학과 / 내과 / ... (선택)
+  title?: string;
+  body: string;
+  tags?: string[];
+  status: ClinicNoteStatus;
+  doneAt?: string; // ISO datetime, status=done 일 때
+  createdAt: string;
+  updatedAt: string;
+};
+
 // Private diary — separate password lock above app auth.
 // Used for the parent's personal notes about 박란하: condition,
 // upsetting events, concerns. Not surfaced anywhere outside /diary.
@@ -184,4 +203,5 @@ export type AnyRecord =
   | MenstrualCycle
   | Meal
   | DiaryEntry
-  | CautionItem;
+  | CautionItem
+  | ClinicNote;
