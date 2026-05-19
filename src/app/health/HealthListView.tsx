@@ -3,34 +3,26 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { SubjectBadge } from "@/components/SubjectBadge";
+import { asPerson, PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
 import {
   ATTENDANCE_TAGS,
   DEPRESSIVE_TAGS,
   MANIC_TAGS,
   MENSTRUATION_LABEL,
-  MOOD_TAG_GROUPS,
   SEVERITY_LABEL,
 } from "@/lib/health-tags";
-import { asPerson, PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
 
-type ViewMode = "card" | "list" | "calendar" | "cloud";
+type ViewMode = "list" | "calendar";
 
 const VIEW_STORAGE_KEY = "mydoctor-health-view";
-
-const POSITIVE_TAGS = new Set(MOOD_TAG_GROUPS[0].tags);
-const NEGATIVE_TAGS = new Set([
-  ...MOOD_TAG_GROUPS[1].tags,
-  ...MOOD_TAG_GROUPS[2].tags,
-]);
 
 export function HealthListView({ logs }: { logs: HealthLog[] }) {
   const [view, setView] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "list";
     const saved = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    if (saved === "card" || saved === "calendar" || saved === "cloud") return saved;
-    return "list";
+    return saved === "calendar" ? "calendar" : "list";
   });
 
   function changeView(v: ViewMode) {
@@ -40,36 +32,18 @@ export function HealthListView({ logs }: { logs: HealthLog[] }) {
     }
   }
 
-  const byDate = useMemo(() => {
-    const m = new Map<string, HealthLog[]>();
-    for (const l of logs) {
-      const arr = m.get(l.date) ?? [];
-      arr.push(l);
-      m.set(l.date, arr);
-    }
-    return m;
-  }, [logs]);
-  const dates = useMemo(
-    () => Array.from(byDate.keys()).sort((a, b) => b.localeCompare(a)),
-    [byDate],
-  );
-
   return (
     <>
       <div className="mb-3 flex items-center justify-end">
         <ViewToggle current={view} onChange={changeView} />
       </div>
 
-      {logs.length === 0 && view !== "calendar" && view !== "cloud" ? (
+      {view === "calendar" ? (
+        <CalendarView logs={logs} />
+      ) : logs.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           조건에 맞는 기록이 없습니다.
         </p>
-      ) : view === "card" ? (
-        <CardView dates={dates} byDate={byDate} />
-      ) : view === "calendar" ? (
-        <CalendarView logs={logs} />
-      ) : view === "cloud" ? (
-        <CloudView logs={logs} />
       ) : (
         <ListView logs={logs} />
       )}
@@ -86,9 +60,7 @@ function ViewToggle({
 }) {
   const opts: { v: ViewMode; label: string }[] = [
     { v: "list", label: "목록" },
-    { v: "card", label: "카드" },
     { v: "calendar", label: "달력" },
-    { v: "cloud", label: "태그" },
   ];
   return (
     <div
@@ -116,448 +88,105 @@ function ViewToggle({
   );
 }
 
-function CardView({
-  dates,
-  byDate,
-}: {
-  dates: string[];
-  byDate: Map<string, HealthLog[]>;
-}) {
-  return (
-    <div className="space-y-5">
-      {dates.map((d) => (
-        <section key={d}>
-          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-            {d}
-          </h2>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {byDate.get(d)!.map((l) => (
-              <HealthCard key={l.id} log={l} />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
-}
+// ============================================================
+// 목록 — 한 줄에 3요소: 인물/날짜 · 한 줄 요약 · 메모/태그수
+// ============================================================
 
-function HealthCard({ log }: { log: HealthLog }) {
-  const year = log.date.slice(0, 4);
-  const allTags = [
-    ...log.bodyTags.map((t) => ({ t, kind: "body" as const })),
-    ...log.moodTags.map((t) => ({ t, kind: "mood" as const })),
-  ];
-  const visibleTags = allTags.slice(0, 6);
-  const extraCount = allTags.length - visibleTags.length;
-
-  return (
-    <Link
-      href={`/health/${year}/${log.id}`}
-      className="block rounded-lg border bg-card p-3 hover:bg-accent/30"
-    >
-      <div className="mb-2 flex items-center gap-2">
-        <SubjectBadge subject={log.subject} size="sm" />
-        {log.measuredAt && (
-          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700">
-            {log.measuredAt}
-          </span>
-        )}
-        {log.severity && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
-            {SEVERITY_LABEL[log.severity]}
-          </span>
-        )}
-      </div>
-
-      {(log.moodScale != null || log.sleepHours != null || log.weight != null) && (
-        <div className="mb-2 flex flex-wrap gap-1.5 text-[11px]">
-          {log.moodScale != null && (
-            <span
-              className={cn(
-                "rounded px-1.5 py-0.5",
-                log.moodScale > 0
-                  ? "bg-orange-100 text-orange-800"
-                  : log.moodScale < 0
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-muted",
-              )}
-            >
-              기분 {log.moodScale > 0 ? `+${log.moodScale}` : log.moodScale}
-            </span>
-          )}
-          {log.sleepHours != null && (
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-              💤 {log.sleepHours}h
-            </span>
-          )}
-          {log.weight != null && (
-            <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
-              ⚖ {log.weight}kg
-            </span>
-          )}
-          {log.menstruation && (
-            <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
-              생리 {MENSTRUATION_LABEL[log.menstruation]}
-            </span>
-          )}
-        </div>
-      )}
-
-      {visibleTags.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1">
-          {visibleTags.map(({ t, kind }) => (
-            <TagPill key={`${kind}-${t}`} tag={t} kind={kind} />
-          ))}
-          {extraCount > 0 && (
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              +{extraCount}
-            </span>
-          )}
-        </div>
-      )}
-
-      {log.note && (
-        <p className="line-clamp-2 text-xs text-muted-foreground">{log.note}</p>
-      )}
-    </Link>
-  );
-}
-
-function TagPill({
-  tag,
-  kind,
-}: {
-  tag: string;
-  kind: "body" | "mood";
-}) {
-  if (kind === "body") {
-    return (
-      <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] text-rose-700">
-        {tag}
-      </span>
-    );
-  }
-  const cls = ATTENDANCE_TAGS.has(tag)
-    ? "bg-rose-600 text-white"
-    : MANIC_TAGS.has(tag)
-      ? "bg-orange-100 text-orange-800"
-      : DEPRESSIVE_TAGS.has(tag)
-        ? "bg-blue-100 text-blue-800"
-        : "bg-indigo-50 text-indigo-700";
-  return (
-    <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", cls)}>
-      {tag}
-    </span>
-  );
-}
-
-function ListView({
-  logs,
-}: {
-  logs: HealthLog[];
-}) {
+function ListView({ logs }: { logs: HealthLog[] }) {
   return (
     <ul className="overflow-hidden rounded-lg border bg-card divide-y">
-      {logs.map((l) => {
-        const year = l.date.slice(0, 4);
-        return (
-          <li key={l.id}>
-            <Link
-              href={`/health/${year}/${l.id}`}
-              className="flex items-start gap-3 p-3 hover:bg-accent/40"
-            >
-              <div className="flex shrink-0 flex-col items-center gap-1">
-                <SubjectBadge subject={l.subject} size="sm" />
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  {l.date.slice(5)}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {l.date.slice(0, 4)}
-                  </span>
-                  {l.measuredAt && (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">
-                      {l.measuredAt}
-                    </span>
-                  )}
-                  {l.severity && (
-                    <span className="rounded bg-muted px-1.5 py-0.5">
-                      {SEVERITY_LABEL[l.severity]}
-                    </span>
-                  )}
-                  {l.moodScale != null && (
-                    <span
-                      className={
-                        l.moodScale > 0
-                          ? "rounded bg-orange-100 px-1.5 py-0.5 text-orange-800"
-                          : l.moodScale < 0
-                            ? "rounded bg-blue-100 px-1.5 py-0.5 text-blue-800"
-                            : "rounded bg-muted px-1.5 py-0.5"
-                      }
-                    >
-                      기분 {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
-                    </span>
-                  )}
-                  {l.sleepHours != null && (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">
-                      💤 {l.sleepHours}h
-                    </span>
-                  )}
-                  {l.weight != null && (
-                    <span className="rounded bg-violet-100 px-1.5 py-0.5 text-violet-800">
-                      ⚖ {l.weight}kg
-                    </span>
-                  )}
-                  {l.menstruation && (
-                    <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-900">
-                      생리 {MENSTRUATION_LABEL[l.menstruation]}
-                    </span>
-                  )}
-                  {l.bodyTags.map((t) => (
-                    <TagPill key={`b-${t}`} tag={t} kind="body" />
-                  ))}
-                  {l.moodTags.map((t) => (
-                    <TagPill key={`m-${t}`} tag={t} kind="mood" />
-                  ))}
-                </div>
-                {l.note && (
-                  <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                    {l.note}
-                  </div>
-                )}
-              </div>
-            </Link>
-          </li>
-        );
-      })}
+      {logs.map((l) => (
+        <LogRow key={l.id} log={l} />
+      ))}
     </ul>
   );
 }
 
-// ============================================================
-// 태그 클라우드 보기
-//   인물별 → 카테고리별로 태그 그룹화. 빈도에 비례해 글자 크기.
-//   카테고리: 조증 신호 · 우울 신호 · 출결 · 신체 · 긍정 · 부정 · 기타
-//   란하/일반 모두 같은 카테고리 묶음을 사용하되 비어있는 카테고리는 숨김.
-// ============================================================
-
-type CloudCategoryKey =
-  | "manic"
-  | "depressive"
-  | "attendance"
-  | "body"
-  | "positive"
-  | "negative"
-  | "other";
-
-const CLOUD_CATEGORY_META: Record<
-  CloudCategoryKey,
-  { label: string; chip: string; text: string }
-> = {
-  manic: {
-    label: "조증 신호",
-    chip: "bg-orange-100 text-orange-800",
-    text: "text-orange-700",
-  },
-  depressive: {
-    label: "우울 신호",
-    chip: "bg-blue-100 text-blue-800",
-    text: "text-blue-700",
-  },
-  attendance: {
-    label: "출결",
-    chip: "bg-rose-600 text-white",
-    text: "text-rose-700",
-  },
-  body: {
-    label: "신체",
-    chip: "bg-rose-50 text-rose-700",
-    text: "text-rose-700",
-  },
-  positive: {
-    label: "긍정",
-    chip: "bg-emerald-100 text-emerald-800",
-    text: "text-emerald-700",
-  },
-  negative: {
-    label: "부정·스트레스",
-    chip: "bg-indigo-100 text-indigo-800",
-    text: "text-indigo-700",
-  },
-  other: {
-    label: "기타",
-    chip: "bg-slate-100 text-slate-700",
-    text: "text-slate-700",
-  },
-};
-
-const CATEGORY_ORDER: CloudCategoryKey[] = [
-  "manic",
-  "depressive",
-  "attendance",
-  "body",
-  "positive",
-  "negative",
-  "other",
-];
-
-function categorizeTag(tag: string, kind: "body" | "mood"): CloudCategoryKey {
-  if (kind === "body") return "body";
-  if (MANIC_TAGS.has(tag)) return "manic";
-  if (DEPRESSIVE_TAGS.has(tag)) return "depressive";
-  if (ATTENDANCE_TAGS.has(tag)) return "attendance";
-  if (POSITIVE_TAGS.has(tag)) return "positive";
-  if (NEGATIVE_TAGS.has(tag)) return "negative";
-  return "other";
-}
-
-function CloudView({ logs }: { logs: HealthLog[] }) {
-  // person → category → tag → count
-  const tally = useMemo(() => {
-    const out = new Map<Person, Map<CloudCategoryKey, Map<string, number>>>();
-    for (const log of logs) {
-      const person = asPerson(log.subject);
-      let perPerson = out.get(person);
-      if (!perPerson) {
-        perPerson = new Map();
-        out.set(person, perPerson);
-      }
-      const addTag = (tag: string, kind: "body" | "mood") => {
-        const cat = categorizeTag(tag, kind);
-        let perCat = perPerson!.get(cat);
-        if (!perCat) {
-          perCat = new Map();
-          perPerson!.set(cat, perCat);
-        }
-        perCat.set(tag, (perCat.get(tag) ?? 0) + 1);
-      };
-      for (const t of log.bodyTags) addTag(t, "body");
-      for (const t of log.moodTags) addTag(t, "mood");
-    }
-    return out;
-  }, [logs]);
-
-  // PEOPLE 순서를 유지하되 실제 기록이 있는 인물만 표시
-  const people = PEOPLE.filter((p) => tally.has(p));
-
-  if (people.length === 0) {
-    return (
-      <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-        태그가 있는 기록이 없습니다.
-      </p>
-    );
-  }
+function LogRow({ log }: { log: HealthLog }) {
+  const year = log.date.slice(0, 4);
+  const summary = oneLineSummary(log);
+  const tagCount = log.bodyTags.length + log.moodTags.length;
 
   return (
-    <div className="space-y-5">
-      {people.map((person) => {
-        const perCat = tally.get(person)!;
-        const totalTags = sumAll(perCat);
-        return (
-          <section
-            key={person}
-            className="rounded-lg border bg-card p-4 sm:p-5"
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <SubjectBadge subject={person} size="md" />
-              <div>
-                <div className="text-sm font-medium">{person}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  태그 {totalTags}개
-                </div>
-              </div>
+    <li>
+      <Link
+        href={`/health/${year}/${log.id}`}
+        className="flex items-center gap-3 px-3 py-2.5 hover:bg-accent/40 sm:px-4"
+      >
+        {/* 좌: 인물 점 + 날짜 */}
+        <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
+          <SubjectBadge subject={log.subject} size="sm" />
+          <span className="font-mono text-[10px] text-muted-foreground">
+            {log.date.slice(5)}
+          </span>
+        </div>
+
+        {/* 중: 한 줄 요약 + 메모 미리보기 */}
+        <div className="min-w-0 flex-1">
+          {summary && (
+            <div className="text-sm leading-snug text-foreground/90">
+              {summary}
             </div>
-
-            <div className="space-y-3">
-              {CATEGORY_ORDER.map((cat) => {
-                const m = perCat.get(cat);
-                if (!m || m.size === 0) return null;
-                return (
-                  <CategoryCloud
-                    key={cat}
-                    category={cat}
-                    tags={m}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function CategoryCloud({
-  category,
-  tags,
-}: {
-  category: CloudCategoryKey;
-  tags: Map<string, number>;
-}) {
-  const meta = CLOUD_CATEGORY_META[category];
-  const entries = useMemo(
-    () => Array.from(tags.entries()).sort((a, b) => b[1] - a[1]),
-    [tags],
-  );
-  const max = entries[0]?.[1] ?? 1;
-
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center gap-2 text-[11px]">
-        <span className={cn("rounded-full px-2 py-0.5", meta.chip)}>
-          {meta.label}
-        </span>
-        <span className="text-muted-foreground">{entries.length}종</span>
-      </div>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        {entries.map(([tag, count]) => {
-          const ratio = count / max;
-          return (
-            <span
-              key={tag}
-              className={cn(
-                "inline-flex items-baseline gap-1 leading-tight",
-                meta.text,
-                cloudSizeClass(ratio),
-              )}
-              title={`${tag} · ${count}회`}
-            >
-              <span>{tag}</span>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                {count}
-              </span>
+          )}
+          {log.note && (
+            <p className="line-clamp-1 text-xs text-muted-foreground">
+              {log.note}
+            </p>
+          )}
+          {!summary && !log.note && (
+            <span className="text-xs text-muted-foreground italic">
+              (내용 없음)
             </span>
-          );
-        })}
-      </div>
-    </div>
+          )}
+        </div>
+
+        {/* 우: 위험 신호 점 · 태그 개수 */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {hasRedFlag(log) && (
+            <span
+              className="h-2 w-2 rounded-full bg-red-500"
+              title="주의 신호 있음"
+            />
+          )}
+          {tagCount > 0 && (
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              태그 {tagCount}
+            </span>
+          )}
+        </div>
+      </Link>
+    </li>
   );
 }
 
-function cloudSizeClass(ratio: number): string {
-  if (ratio >= 0.85) return "text-2xl font-semibold";
-  if (ratio >= 0.65) return "text-xl font-medium";
-  if (ratio >= 0.45) return "text-lg";
-  if (ratio >= 0.25) return "text-base";
-  return "text-sm";
+// 숫자/스칼라 데이터를 한 줄 텍스트로. "기분 +3 · 잠 5h · 체중 78kg · 컨디션 안좋음"
+function oneLineSummary(log: HealthLog): string {
+  const parts: string[] = [];
+
+  if (log.moodScale != null) {
+    const sign = log.moodScale > 0 ? "+" : "";
+    parts.push(`기분 ${sign}${log.moodScale}`);
+  }
+  if (log.sleepHours != null) parts.push(`잠 ${log.sleepHours}h`);
+  if (log.weight != null) parts.push(`체중 ${log.weight}kg`);
+  if (log.severity) parts.push(SEVERITY_LABEL[log.severity]);
+  if (log.menstruation) parts.push(`생리 ${MENSTRUATION_LABEL[log.menstruation]}`);
+  if (log.measuredAt) parts.push(log.measuredAt);
+
+  return parts.join(" · ");
 }
 
-function sumAll(m: Map<CloudCategoryKey, Map<string, number>>): number {
-  let total = 0;
-  for (const cat of m.values()) {
-    for (const c of cat.values()) total += c;
+// 출결 이상이나 자살 생각 같은 강한 신호가 있으면 우측에 작은 빨간 점.
+function hasRedFlag(log: HealthLog): boolean {
+  for (const t of log.moodTags) {
+    if (ATTENDANCE_TAGS.has(t)) return true;
+    if (t === "자살 생각") return true;
   }
-  return total;
+  return false;
 }
 
 // ============================================================
-// 캘린더 보기
-//   월간 그리드 + 각 칸에 인물별 색 점. 박란하 점은 그날 평균
-//   moodScale에 따라 색조가 변함 (조증쪽 주황, 우울쪽 파랑).
-//   날짜 클릭 시 그 날 기록 카드가 캘린더 아래에 펼쳐짐.
+// 캘린더 — 월간 그리드, 각 칸에 인물별 색 점
 // ============================================================
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -702,7 +331,7 @@ type Dot = { color: string; title: string };
 
 function computeDots(dayLogs: HealthLog[]): Dot[] {
   if (dayLogs.length === 0) return [];
-  // 인물별로 묶고 각 인물당 점 1개. 박란하는 평균 moodScale 으로 색 조정.
+  // 인물별로 묶고 각 인물당 점 1개. 박란하는 평균 moodScale로 색 조정.
   const perPerson = new Map<Person, HealthLog[]>();
   for (const l of dayLogs) {
     const p = asPerson(l.subject);
@@ -721,7 +350,10 @@ function computeDots(dayLogs: HealthLog[]): Dot[] {
         .filter((n): n is number => typeof n === "number");
       if (scales.length > 0) {
         const avg = scales.reduce((a, b) => a + b, 0) / scales.length;
-        out.push({ color: lanhaMoodColor(avg), title: `박란하 기분 ${avg.toFixed(1)}` });
+        out.push({
+          color: lanhaMoodColor(avg),
+          title: `박란하 기분 ${avg.toFixed(1)}`,
+        });
         continue;
       }
       out.push({ color: PERSON_COLORS[p].dot, title: "박란하" });
@@ -752,7 +384,6 @@ function SelectedDayPanel({
   const [y, m, d] = date.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   const w = WEEKDAYS[dt.getDay()];
-  const year = String(y);
 
   return (
     <div className="rounded-lg border bg-card">
@@ -797,64 +428,7 @@ function SelectedDayPanel({
       ) : (
         <ul className="divide-y">
           {logs.map((l) => (
-            <li key={l.id}>
-              <Link
-                href={`/health/${year}/${l.id}`}
-                className="block px-3 py-2.5 hover:bg-accent/40 sm:px-4"
-              >
-                <div className="mb-1 flex flex-wrap items-center gap-1.5 text-xs">
-                  <SubjectBadge subject={l.subject} size="sm" />
-                  {l.measuredAt && (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700">
-                      {l.measuredAt}
-                    </span>
-                  )}
-                  {l.severity && (
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
-                      {SEVERITY_LABEL[l.severity]}
-                    </span>
-                  )}
-                  {l.moodScale != null && (
-                    <span
-                      className={
-                        l.moodScale > 0
-                          ? "rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-800"
-                          : l.moodScale < 0
-                            ? "rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-800"
-                            : "rounded bg-muted px-1.5 py-0.5 text-[10px]"
-                      }
-                    >
-                      기분 {l.moodScale > 0 ? `+${l.moodScale}` : l.moodScale}
-                    </span>
-                  )}
-                  {l.sleepHours != null && (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700">
-                      💤 {l.sleepHours}h
-                    </span>
-                  )}
-                  {l.menstruation && (
-                    <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] text-rose-900">
-                      생리 {MENSTRUATION_LABEL[l.menstruation]}
-                    </span>
-                  )}
-                </div>
-                {(l.bodyTags.length > 0 || l.moodTags.length > 0) && (
-                  <div className="mb-1 flex flex-wrap gap-1">
-                    {l.bodyTags.map((t) => (
-                      <TagPill key={`b-${t}`} tag={t} kind="body" />
-                    ))}
-                    {l.moodTags.map((t) => (
-                      <TagPill key={`m-${t}`} tag={t} kind="mood" />
-                    ))}
-                  </div>
-                )}
-                {l.note && (
-                  <p className="line-clamp-2 text-xs text-muted-foreground">
-                    {l.note}
-                  </p>
-                )}
-              </Link>
-            </li>
+            <LogRow key={l.id} log={l} />
           ))}
         </ul>
       )}

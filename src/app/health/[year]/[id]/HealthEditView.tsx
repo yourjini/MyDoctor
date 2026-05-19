@@ -1,20 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { TagPicker } from "@/components/TagPicker";
 import {
-  BODY_TAG_GROUPS,
-  MENSTRUATION_LABEL,
-  MOOD_TAG_GROUPS,
-  SEVERITY_LABEL,
-  BIPOLAR_SIGNAL_TAGS,
-  MANIC_TAGS,
-  DEPRESSIVE_TAGS,
   ATTENDANCE_TAGS,
+  BIPOLAR_SIGNAL_TAGS,
+  DEPRESSIVE_TAGS,
+  MANIC_TAGS,
+  MENSTRUATION_LABEL,
+  SEVERITY_LABEL,
 } from "@/lib/health-tags";
 import { updateHealthLogAction } from "../../actions";
+import { HealthLogFormBody } from "../../HealthLogFormBody";
 import type { HealthLog } from "@/lib/types";
-import { BipolarAwareFields } from "../../BipolarFields";
 
 export function HealthEditView({
   log,
@@ -46,64 +43,25 @@ export function HealthEditView({
       <input type="hidden" name="id" value={log.id} />
       <input type="hidden" name="year" value={year} />
 
-      <BipolarAwareFields
+      <HealthLogFormBody
         defaultDate={log.date}
         defaultSubject={log.subject}
+        defaultSeverity={log.severity}
+        defaultBodyTags={log.bodyTags}
+        defaultMoodTags={log.moodTags}
+        defaultMenstruation={log.menstruation}
+        defaultNote={log.note}
         defaultMoodScale={log.moodScale}
         defaultSleepHours={log.sleepHours}
         defaultWeight={log.weight}
-        defaultMoodTags={log.moodTags}
         defaultMeasuredAt={log.measuredAt}
         latestBipolarWeight={latestBipolarWeight}
       />
 
-      <Field label="컨디션 (전체)">
-        <SeverityRadios defaultValue={log.severity} />
-      </Field>
-
-      <CollapsibleField
-        label="아픈 곳 / 증상"
-        defaultOpen={log.bodyTags.length > 0}
-      >
-        <TagPicker
-          name="bodyTags"
-          groups={BODY_TAG_GROUPS}
-          defaultValue={log.bodyTags}
-          selectedClass="bg-rose-500 text-white border-rose-500"
-        />
-      </CollapsibleField>
-
-      <CollapsibleField
-        label="기분 / 심리"
-        defaultOpen={
-          log.moodTags.filter((t) => !BIPOLAR_SIGNAL_TAGS.has(t)).length > 0
-        }
-      >
-        <TagPicker
-          name="moodTags"
-          groups={MOOD_TAG_GROUPS}
-          defaultValue={log.moodTags.filter((t) => !BIPOLAR_SIGNAL_TAGS.has(t))}
-          selectedClass="bg-indigo-500 text-white border-indigo-500"
-        />
-      </CollapsibleField>
-
-      <Field label="생리">
-        <MenstruationRadios defaultValue={log.menstruation} />
-      </Field>
-
-      <Field label="메모">
-        <textarea
-          name="note"
-          rows={3}
-          defaultValue={log.note ?? ""}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-        />
-      </Field>
-
       <div className="flex gap-2 pt-1">
         <button
           type="submit"
-          className="rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+          className="rounded-md bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
         >
           저장
         </button>
@@ -160,7 +118,7 @@ function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
       )}
       {log.bodyTags.length > 0 && (
         <Row label="아픈 곳 / 증상">
-          <TagList tags={log.bodyTags} className="bg-rose-50 text-rose-700" />
+          <TagList tags={log.bodyTags} className="bg-slate-100 text-slate-700" />
         </Row>
       )}
       {log.moodTags.some((t) => MANIC_TAGS.has(t)) && (
@@ -183,7 +141,7 @@ function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
         <Row label="출결">
           <TagList
             tags={log.moodTags.filter((t) => ATTENDANCE_TAGS.has(t))}
-            className="bg-rose-100 text-rose-800"
+            className="bg-red-100 text-red-800"
           />
         </Row>
       )}
@@ -208,7 +166,7 @@ function ReadOnlyView({ log, onEdit }: { log: HealthLog; onEdit: () => void }) {
         <button
           type="button"
           onClick={onEdit}
-          className="rounded-md bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+          className="rounded-md bg-pink-600 px-4 py-2 text-sm font-medium text-white hover:bg-pink-700"
         >
           수정하기
         </button>
@@ -244,119 +202,5 @@ function TagList({ tags, className }: { tags: string[]; className: string }) {
         </span>
       ))}
     </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium">
-        {label}
-        {required && <span className="ml-0.5 text-destructive">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function CollapsibleField({
-  label,
-  defaultOpen = false,
-  children,
-}: {
-  label: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <details
-      className="group rounded-md border bg-background"
-      open={defaultOpen}
-    >
-      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium hover:bg-accent/50">
-        <span>{label}</span>
-        <span className="text-xs text-muted-foreground group-open:hidden">
-          펼치기 ▾
-        </span>
-        <span className="hidden text-xs text-muted-foreground group-open:inline">
-          접기 ▴
-        </span>
-      </summary>
-      <div className="border-t p-3">{children}</div>
-    </details>
-  );
-}
-
-function SeverityRadios({ defaultValue }: { defaultValue?: number }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      <RadioPill name="severity" value="" label="—" defaultChecked={!defaultValue} />
-      {[1, 2, 3, 4, 5].map((n) => (
-        <RadioPill
-          key={n}
-          name="severity"
-          value={String(n)}
-          label={`${n} ${SEVERITY_LABEL[n]}`}
-          defaultChecked={defaultValue === n}
-        />
-      ))}
-    </div>
-  );
-}
-
-function MenstruationRadios({ defaultValue }: { defaultValue?: string }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      <RadioPill
-        name="menstruation"
-        value=""
-        label="해당없음"
-        defaultChecked={!defaultValue}
-      />
-      {(["light", "normal", "heavy"] as const).map((v) => (
-        <RadioPill
-          key={v}
-          name="menstruation"
-          value={v}
-          label={MENSTRUATION_LABEL[v]}
-          defaultChecked={defaultValue === v}
-        />
-      ))}
-    </div>
-  );
-}
-
-function RadioPill({
-  name,
-  value,
-  label,
-  defaultChecked,
-}: {
-  name: string;
-  value: string;
-  label: string;
-  defaultChecked?: boolean;
-}) {
-  return (
-    <label className="cursor-pointer">
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        defaultChecked={defaultChecked}
-        className="peer sr-only"
-      />
-      <span className="inline-block rounded-full border bg-background px-3 py-1 text-xs text-foreground hover:bg-accent peer-checked:border-rose-500 peer-checked:bg-rose-500 peer-checked:text-white">
-        {label}
-      </span>
-    </label>
   );
 }

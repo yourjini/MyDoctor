@@ -95,15 +95,13 @@ export async function createHealthLogAction(formData: FormData) {
   if (!date) throw new Error("날짜는 필수입니다");
   if (!ISO_DATE_RE.test(date)) throw new Error("날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)");
 
-  // 박란하만 moodScale/sleepHours/measuredAt/weight 적용
+  // 박란하만 moodScale/sleepHours/measuredAt/weight 적용. 체중은 위기 상황엔
+  // 못 재는 경우가 많아 필수가 아님.
   const isBipolarSubject = subject === "박란하";
   const moodScale = isBipolarSubject ? parseMoodScale(formData) : undefined;
   const sleepHours = isBipolarSubject ? parseSleepHours(formData) : undefined;
   const measuredAt = isBipolarSubject ? parseMeasuredAt(formData) : undefined;
   const weight = isBipolarSubject ? parseWeight(formData) : undefined;
-  if (isBipolarSubject && weight == null) {
-    throw new Error("란하 기록은 체중을 입력해야 합니다 (kg)");
-  }
 
   await createHealthLog({
     date,
@@ -149,9 +147,6 @@ export async function updateHealthLogAction(formData: FormData) {
   );
 
   const weightVal = isBipolarSubject ? parseWeight(formData) : undefined;
-  if (isBipolarSubject && weightVal == null) {
-    throw new Error("란하 기록은 체중을 입력해야 합니다 (kg)");
-  }
 
   const patch: Partial<HealthLog> = {
     date,

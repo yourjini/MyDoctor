@@ -23,7 +23,8 @@ export default async function HealthPage({
   searchParams: Promise<{ subject?: string; q?: string; range?: string }>;
 }) {
   const sp = await searchParams;
-  const filter = asPerson(sp.subject);
+  // 80% 사용 패턴 — subject 파라미터 없으면 박란하 디폴트
+  const filter = sp.subject == null ? "박란하" : asPerson(sp.subject);
   const query = (sp.q ?? "").trim().toLowerCase();
   const range = sp.range ?? "30";
 
@@ -73,7 +74,7 @@ export default async function HealthPage({
       <div className="mb-3 space-y-2">
         <SearchBar placeholder="태그·메모 검색" />
         <div className="flex flex-wrap items-center gap-3">
-          <SubjectFilter />
+          <SubjectFilter defaultPerson="박란하" />
           <RangeFilter current={range} />
         </div>
       </div>

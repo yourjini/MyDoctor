@@ -5,17 +5,24 @@ import { useTransition } from "react";
 import { asPerson, PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
-export function SubjectFilter() {
+export function SubjectFilter({
+  defaultPerson = "전체",
+}: {
+  // 어느 인물을 "기본값(= URL 파라미터 없음)"으로 볼지. 페이지별로 다름.
+  defaultPerson?: Person;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
 
-  const current = asPerson(searchParams.get("subject") ?? undefined);
+  const rawParam = searchParams.get("subject");
+  const current: Person =
+    rawParam == null ? defaultPerson : asPerson(rawParam);
 
   function selectPerson(p: Person) {
     const params = new URLSearchParams(searchParams.toString());
-    if (p === "전체") params.delete("subject");
+    if (p === defaultPerson) params.delete("subject");
     else params.set("subject", p);
     const qs = params.toString();
     startTransition(() => {
