@@ -6,76 +6,47 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // ----------------------------------------------------------------------
-// Navigation structure
-//
-// Mobile (<sm): top bar shows logo + "더보기" overflow only. A fixed
-// bottom tab bar exposes 5 primary actions — chosen so 박란하's daily
-// tracking (건강일지, 식단) is always one tap away.
-//
-// Desktop (>=sm): grouped top-bar dropdowns:
-//   의료기록  = 방문이력 / 예약 / 건강검진
-//   건강추적  = 건강일지 / 그래프 / 생리주기 / 식단
-//   프로필
+// 모바일·데스크탑이 같은 정보 구조를 쓴다. 항목·라벨·그룹 모두 동일.
+// 시각만 다름: 모바일은 상단(로고+더보기) + 하단탭, 데스크탑은 상단바
+// (로고 + 1차 탭 4개 + 더보기) 한 줄.
 // ----------------------------------------------------------------------
 
-type LeafLink = { href: string; label: string; icon?: (p: { className?: string }) => React.ReactElement };
-
-const ALL_LINKS: Record<string, LeafLink> = {
-  home: { href: "/", label: "오늘", icon: IconHome },
-  visits: { href: "/visits", label: "방문이력", icon: IconStethoscope },
-  appointments: { href: "/appointments", label: "예약", icon: IconCalendar },
-  checkups: { href: "/checkups", label: "건강검진", icon: IconClipboard },
-  health: { href: "/health", label: "건강일지", icon: IconHeart },
-  chart: { href: "/health/chart", label: "그래프", icon: IconChart },
-  period: { href: "/period", label: "생리주기", icon: IconDrop },
-  meals: { href: "/meals", label: "식단", icon: IconUtensils },
-  cautions: { href: "/cautions", label: "주의음식", icon: IconAlert },
-  notes: { href: "/notes", label: "선생님메모", icon: IconNote },
-  diary: { href: "/diary", label: "다이어리", icon: IconLock },
-  profile: { href: "/profile", label: "프로필", icon: IconUser },
+type LeafLink = {
+  href: string;
+  label: string;
+  icon?: (p: { className?: string }) => React.ReactElement;
 };
 
-// Bottom tab bar — 5 most-tapped destinations for the parent on mobile.
-const BOTTOM_TABS = [
-  ALL_LINKS.home,
-  ALL_LINKS.health,
-  ALL_LINKS.meals,
-  ALL_LINKS.appointments,
+const HOME: LeafLink = { href: "/", label: "오늘", icon: IconHome };
+
+const PRIMARY: LeafLink[] = [
+  HOME,
+  { href: "/health", label: "건강일지", icon: IconHeart },
+  { href: "/meals", label: "식단", icon: IconUtensils },
+  { href: "/appointments", label: "예약", icon: IconCalendar },
 ];
 
-// Overflow drawer (mobile "더보기"): everything not in the bottom tabs.
-const MORE_LINKS = [
-  ALL_LINKS.visits,
-  ALL_LINKS.checkups,
-  ALL_LINKS.period,
-  ALL_LINKS.chart,
-  ALL_LINKS.cautions,
-  ALL_LINKS.notes,
-  ALL_LINKS.diary,
-  ALL_LINKS.profile,
-];
-
-// Desktop grouped clusters.
-const DESKTOP_GROUPS: { label: string; items: LeafLink[] }[] = [
+const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
   {
     label: "의료기록",
     items: [
-      ALL_LINKS.visits,
-      ALL_LINKS.appointments,
-      ALL_LINKS.checkups,
-      ALL_LINKS.notes,
+      { href: "/visits", label: "방문이력", icon: IconStethoscope },
+      { href: "/checkups", label: "건강검진", icon: IconClipboard },
+      { href: "/notes", label: "선생님메모", icon: IconNote },
     ],
   },
   {
     label: "건강추적",
     items: [
-      ALL_LINKS.health,
-      ALL_LINKS.chart,
-      ALL_LINKS.period,
-      ALL_LINKS.meals,
-      ALL_LINKS.cautions,
-      ALL_LINKS.diary,
+      { href: "/health/chart", label: "그래프", icon: IconChart },
+      { href: "/period", label: "생리주기", icon: IconDrop },
+      { href: "/cautions", label: "주의음식", icon: IconAlert },
+      { href: "/diary", label: "다이어리", icon: IconLock },
     ],
+  },
+  {
+    label: "기타",
+    items: [{ href: "/profile", label: "프로필", icon: IconUser }],
   },
 ];
 
@@ -83,28 +54,27 @@ export function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const desktopRef = useRef<HTMLDivElement | null>(null);
+  const moreRef = useRef<HTMLDivElement | null>(null);
 
-  // Close menus on route change.
+  // 라우트 변경 시 더보기 닫기
   useEffect(() => {
     setMoreOpen(false);
-    setOpenGroup(null);
   }, [pathname]);
 
-  // Click-outside for desktop dropdowns.
+  // 데스크탑 popover 바깥 클릭 시 닫기
   useEffect(() => {
-    if (!openGroup) return;
+    if (!moreOpen) return;
     function onClick(e: MouseEvent) {
-      if (!desktopRef.current) return;
-      if (!desktopRef.current.contains(e.target as Node)) setOpenGroup(null);
+      if (!moreRef.current) return;
+      if (!moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
-  }, [openGroup]);
+  }, [moreOpen]);
 
   async function logout() {
     await fetch("/api/login", { method: "DELETE" });
+    setMoreOpen(false);
     router.push("/login");
     router.refresh();
   }
@@ -113,117 +83,70 @@ export function Nav() {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
 
-  function groupActive(items: LeafLink[]) {
-    return items.some((i) => isActive(i.href));
-  }
+  // 더보기 안쪽에 있는 항목 중 어느 하나라도 활성이면 더보기 버튼도 활성 표시
+  const moreActive = SECONDARY_GROUPS.some((g) =>
+    g.items.some((it) => isActive(it.href)),
+  );
 
   return (
     <>
-      {/* ─── Top bar ────────────────────────────────────────────────── */}
+      {/* ─── 상단 바 ────────────────────────────────────────── */}
       <nav className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur">
         <div className="container-narrow flex items-center justify-between gap-2 py-3">
           <Link href="/" className="text-lg font-semibold">
             MyDoctor
           </Link>
 
-          {/* Desktop grouped nav */}
-          <div ref={desktopRef} className="hidden items-center gap-1 sm:flex">
-            <Link
-              href={ALL_LINKS.home.href}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm",
-                isActive("/")
-                  ? "bg-accent font-medium text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/60",
-              )}
-            >
-              오늘
-            </Link>
-
-            {DESKTOP_GROUPS.map((g) => {
-              const open = openGroup === g.label;
-              const active = groupActive(g.items);
-              return (
-                <div key={g.label} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setOpenGroup(open ? null : g.label)}
-                    aria-expanded={open}
-                    aria-haspopup="menu"
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm",
-                      active
-                        ? "bg-accent font-medium text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/60",
-                    )}
-                  >
-                    {g.label}
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={cn(
-                        "transition-transform",
-                        open && "rotate-180",
-                      )}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {open && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 top-full z-30 mt-1 min-w-[160px] overflow-hidden rounded-md border bg-card shadow-md"
-                    >
-                      {g.items.map((it) => (
-                        <Link
-                          key={it.href}
-                          href={it.href}
-                          role="menuitem"
-                          className={cn(
-                            "block px-3 py-2 text-sm",
-                            isActive(it.href)
-                              ? "bg-accent font-medium"
-                              : "hover:bg-accent/60",
-                          )}
-                        >
-                          {it.label}
-                        </Link>
-                      ))}
-                    </div>
+          {/* 데스크탑: 1차 탭 4개 + 더보기 (≥sm) */}
+          <div ref={moreRef} className="hidden items-center gap-1 sm:flex">
+            {PRIMARY.map((l) => (
+              <TopTab key={l.href} link={l} active={isActive(l.href)} />
+            ))}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm",
+                  moreActive
+                    ? "bg-accent font-medium text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/60",
+                )}
+              >
+                더보기
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={cn(
+                    "transition-transform",
+                    moreOpen && "rotate-180",
                   )}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {moreOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-md border bg-card shadow-md"
+                >
+                  <MoreContent isActive={isActive} onLogout={logout} />
                 </div>
-              );
-            })}
-
-            <Link
-              href={ALL_LINKS.profile.href}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm",
-                isActive(ALL_LINKS.profile.href)
-                  ? "bg-accent font-medium text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/60",
               )}
-            >
-              프로필
-            </Link>
-
-            <button
-              onClick={logout}
-              className="ml-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent/60"
-              title="로그아웃"
-            >
-              로그아웃
-            </button>
+            </div>
           </div>
 
-          {/* Mobile overflow button (top-right) */}
+          {/* 모바일: 햄버거 더보기 (<sm) */}
           <button
+            type="button"
             onClick={() => setMoreOpen((v) => !v)}
             aria-label="더보기"
             aria-expanded={moreOpen}
@@ -256,74 +179,31 @@ export function Nav() {
           </button>
         </div>
 
-        {/* Mobile overflow drawer */}
+        {/* 모바일 더보기 드로어 (상단바 아래로 펼침) */}
         {moreOpen && (
           <div className="border-t sm:hidden">
-            <div className="container-narrow grid grid-cols-2 gap-1 py-2">
-              {MORE_LINKS.map((l) => {
-                const Icon = l.icon;
-                return (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={cn(
-                      "flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2 text-sm",
-                      isActive(l.href)
-                        ? "bg-accent font-medium text-accent-foreground"
-                        : "text-foreground/80 hover:bg-accent/60",
-                    )}
-                  >
-                    {Icon && <Icon className="h-4 w-4 shrink-0" />}
-                    {l.label}
-                  </Link>
-                );
-              })}
-              <button
-                onClick={logout}
-                className="col-span-2 mt-1 rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent/60"
-              >
-                로그아웃
-              </button>
+            <div className="container-narrow py-2">
+              <MoreContent isActive={isActive} onLogout={logout} />
             </div>
           </div>
         )}
       </nav>
 
-      {/* ─── Mobile bottom tab bar ─────────────────────────────────── */}
+      {/* ─── 모바일 하단 탭 바 ───────────────────────────────── */}
       <div
         className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 backdrop-blur sm:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="mx-auto flex max-w-3xl items-stretch">
-          {BOTTOM_TABS.map((l) => {
-            const Icon = l.icon!;
-            const active = isActive(l.href);
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px]",
-                  active ? "text-primary" : "text-muted-foreground",
-                )}
-                aria-current={active ? "page" : undefined}
-              >
-                <Icon
-                  className={cn(
-                    "h-5 w-5",
-                    active ? "stroke-[2.2]" : "stroke-[1.8]",
-                  )}
-                />
-                <span className={cn(active && "font-medium")}>{l.label}</span>
-              </Link>
-            );
-          })}
+          {PRIMARY.map((l) => (
+            <BottomTab key={l.href} link={l} active={isActive(l.href)} />
+          ))}
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px]",
-              moreOpen ? "text-primary" : "text-muted-foreground",
+              moreActive || moreOpen ? "text-primary" : "text-muted-foreground",
             )}
             aria-label="더보기"
           >
@@ -336,8 +216,98 @@ export function Nav() {
   );
 }
 
+// ─── 공통 더보기 콘텐츠 ───────────────────────────────────────
+// 모바일·데스크탑이 같은 노드를 씀. 그룹·항목·라벨·아이콘 동일.
+function MoreContent({
+  isActive,
+  onLogout,
+}: {
+  isActive: (href: string) => boolean;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="divide-y">
+      {SECONDARY_GROUPS.map((g) => (
+        <section key={g.label} className="p-2">
+          <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {g.label}
+          </div>
+          <ul>
+            {g.items.map((it) => {
+              const Icon = it.icon;
+              const active = isActive(it.href);
+              return (
+                <li key={it.href}>
+                  <Link
+                    href={it.href}
+                    role="menuitem"
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-2 py-2 text-sm",
+                      active
+                        ? "bg-accent font-medium text-accent-foreground"
+                        : "hover:bg-accent/60",
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                    <span>{it.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+      <section className="p-2">
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-muted-foreground hover:bg-accent/60"
+        >
+          <IconLogout className="h-4 w-4 shrink-0" />
+          로그아웃
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function TopTab({ link, active }: { link: LeafLink; active: boolean }) {
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "rounded-md px-3 py-1.5 text-sm",
+        active
+          ? "bg-accent font-medium text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/60",
+      )}
+    >
+      {link.label}
+    </Link>
+  );
+}
+
+function BottomTab({ link, active }: { link: LeafLink; active: boolean }) {
+  const Icon = link.icon!;
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px]",
+        active ? "text-primary" : "text-muted-foreground",
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon
+        className={cn("h-5 w-5", active ? "stroke-[2.2]" : "stroke-[1.8]")}
+      />
+      <span className={cn(active && "font-medium")}>{link.label}</span>
+    </Link>
+  );
+}
+
 // ----------------------------------------------------------------------
-// Inline icons (no extra deps). Stroke-based for crisp scaling.
+// 인라인 아이콘 (외부 의존성 제거). stroke 기반으로 크기 변경에 강함.
 // ----------------------------------------------------------------------
 
 function svg(children: React.ReactNode, className?: string) {
@@ -452,7 +422,6 @@ function IconUser({ className }: { className?: string }) {
     className,
   );
 }
-
 function IconLock({ className }: { className?: string }) {
   return svg(
     <>
@@ -462,7 +431,6 @@ function IconLock({ className }: { className?: string }) {
     className,
   );
 }
-
 function IconAlert({ className }: { className?: string }) {
   return svg(
     <>
@@ -473,7 +441,6 @@ function IconAlert({ className }: { className?: string }) {
     className,
   );
 }
-
 function IconNote({ className }: { className?: string }) {
   return svg(
     <>
@@ -481,6 +448,16 @@ function IconNote({ className }: { className?: string }) {
       <polyline points="15 4 15 9 20 9" />
       <line x1="7" y1="13" x2="15" y2="13" />
       <line x1="7" y1="17" x2="13" y2="17" />
+    </>,
+    className,
+  );
+}
+function IconLogout({ className }: { className?: string }) {
+  return svg(
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </>,
     className,
   );
