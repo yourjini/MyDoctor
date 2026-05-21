@@ -36,8 +36,6 @@ export function MealEditView({
           time: meal.time,
           slot: meal.slot,
           menu: meal.menu,
-          calories: meal.calories,
-          macros: meal.macros,
           tags: meal.tags,
           rating: meal.rating,
           note: meal.note,
@@ -69,17 +67,6 @@ export function MealEditView({
       </div>
 
       <div className="flex flex-wrap gap-1.5 text-xs">
-        {meal.calories != null && (
-          <span className="rounded bg-muted px-1.5 py-0.5">
-            {meal.calories}kcal
-          </span>
-        )}
-        {meal.macros && (
-          <span className="rounded bg-slate-50 px-1.5 py-0.5 text-slate-600">
-            탄수 {meal.macros.carbG ?? "-"}g · 단백질{" "}
-            {meal.macros.proteinG ?? "-"}g · 지방 {meal.macros.fatG ?? "-"}g
-          </span>
-        )}
         {meal.tags.map((t) => (
           <span
             key={t}

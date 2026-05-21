@@ -14,9 +14,6 @@ export type LanhaSnapshot = {
   latestWeightDate?: string;
   weightDeltaSinceStart?: number; // kg, + = 증가
   startWeight?: number;
-  targetKcal?: number;
-  todayKcal: number;
-  todayCounted: number; // 끼니 수 (오늘 기록된)
 };
 
 export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
@@ -37,7 +34,7 @@ export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2">
         <Tile
           label="기분"
           value={moodLabel(snap.latestMoodScale)}
@@ -66,35 +63,7 @@ export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
           }
           accent={weightAccent(snap.weightDeltaSinceStart)}
         />
-        <Tile
-          label="칼로리"
-          value={`${snap.todayKcal}`}
-          sub={
-            snap.targetKcal
-              ? `/${snap.targetKcal}kcal`
-              : `${snap.todayCounted}끼`
-          }
-          accent={kcalAccent(snap.todayKcal, snap.targetKcal)}
-        />
       </div>
-
-      {snap.targetKcal && (
-        <div className="mt-3">
-          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn(
-                "h-full transition-all",
-                snap.todayKcal > snap.targetKcal
-                  ? "bg-rose-500"
-                  : "bg-emerald-500",
-              )}
-              style={{
-                width: `${Math.min(100, Math.round((snap.todayKcal / snap.targetKcal) * 100))}%`,
-              }}
-            />
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -153,14 +122,6 @@ function weightAccent(delta?: number): string {
   if (delta >= 2) return "text-amber-700";
   if (delta <= -2) return "text-emerald-700";
   return "text-foreground";
-}
-
-function kcalAccent(today: number, target?: number): string {
-  if (!target) return "text-foreground";
-  if (today === 0) return "text-muted-foreground";
-  if (today > target) return "text-rose-600";
-  if (today >= target * 0.85) return "text-amber-700";
-  return "text-emerald-700";
 }
 
 function fmtDate(d?: string): string {

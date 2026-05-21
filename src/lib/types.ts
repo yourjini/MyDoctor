@@ -120,12 +120,6 @@ export type PersonProfile = {
 
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
-export type MealMacros = {
-  carbG?: number;
-  proteinG?: number;
-  fatG?: number;
-};
-
 export type Meal = {
   id: string;
   kind: "meal";
@@ -134,8 +128,6 @@ export type Meal = {
   time?: string; // HH:MM
   slot: MealSlot;
   menu: string;
-  calories?: number;
-  macros?: MealMacros;
   tags: string[];
   rating?: number; // 1-5
   note?: string;

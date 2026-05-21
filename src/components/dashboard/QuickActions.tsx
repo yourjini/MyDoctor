@@ -13,7 +13,7 @@ const ACTIONS = [
   {
     href: "/meals/new",
     label: "식사",
-    sub: "메뉴·칼로리",
+    sub: "메뉴·끼니",
     cls: "bg-emerald-600 hover:bg-emerald-700",
   },
   {

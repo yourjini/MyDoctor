@@ -9,11 +9,6 @@ import {
   suggestMeals,
   type MealLibraryItem,
 } from "@/lib/meal-library";
-import {
-  matchFoods,
-  sumMatch,
-  type FoodMatch,
-} from "@/lib/food-db";
 import type { Meal, MealSlot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +27,6 @@ export type MealFormDefaults = Partial<
     | "time"
     | "slot"
     | "menu"
-    | "calories"
-    | "macros"
     | "tags"
     | "note"
     | "rating"
@@ -60,63 +53,14 @@ export function MealForm({
 }) {
   const [slot, setSlot] = useState<MealSlot>(defaults?.slot ?? initialSlot);
   const [menu, setMenu] = useState<string>(defaults?.menu ?? "");
-  const [calories, setCalories] = useState<string>(
-    defaults?.calories != null ? String(defaults.calories) : "",
-  );
-  const [carbG, setCarbG] = useState<string>(
-    defaults?.macros?.carbG != null ? String(defaults.macros.carbG) : "",
-  );
-  const [proteinG, setProteinG] = useState<string>(
-    defaults?.macros?.proteinG != null
-      ? String(defaults.macros.proteinG)
-      : "",
-  );
-  const [fatG, setFatG] = useState<string>(
-    defaults?.macros?.fatG != null ? String(defaults.macros.fatG) : "",
-  );
   const [tags, setTags] = useState<string[]>(defaults?.tags ?? []);
   const [fromLibraryId, setFromLibraryId] = useState<string>(
     defaults?.fromLibraryId ?? "",
   );
   const [suggestions, setSuggestions] = useState<MealLibraryItem[]>([]);
 
-  // 메뉴 텍스트 → 음식 매칭. 사용자가 ±로 인분 조정 가능.
-  const baseMatches = useMemo<FoodMatch[]>(() => matchFoods(menu), [menu]);
-  const [matchOverrides, setMatchOverrides] = useState<Record<string, number>>(
-    {},
-  );
-  const matches: FoodMatch[] = useMemo(
-    () =>
-      baseMatches.map((m) => {
-        const key = m.entry.label;
-        const c = matchOverrides[key];
-        return { ...m, count: c ?? m.count };
-      }),
-    [baseMatches, matchOverrides],
-  );
-  const matchTotal = useMemo(() => sumMatch(matches), [matches]);
-
-  function bumpMatch(label: string, delta: number) {
-    setMatchOverrides((prev) => {
-      const cur = prev[label] ?? 1;
-      const next = Math.max(0, cur + delta);
-      return { ...prev, [label]: next };
-    });
-  }
-
-  function applyMatchEstimate() {
-    setCalories(String(matchTotal.calories));
-    setCarbG(String(matchTotal.carbG));
-    setProteinG(String(matchTotal.proteinG));
-    setFatG(String(matchTotal.fatG));
-  }
-
   function applyLibrary(item: MealLibraryItem) {
     setMenu(item.name + (item.description ? ` — ${item.description}` : ""));
-    setCalories(String(item.calories));
-    setCarbG(String(item.carbG));
-    setProteinG(String(item.proteinG));
-    setFatG(String(item.fatG));
     setTags(Array.from(new Set(item.tags)));
     setFromLibraryId(item.id);
     setSuggestions([]);
@@ -193,12 +137,10 @@ export function MealForm({
         </Field>
       </div>
 
-      {/* 메뉴 제안 */}
+      {/* 메뉴 추천 — 무엇을 먹을지 아이디어. 영양 수치는 추적하지 않음. */}
       <div className="rounded-md border border-emerald-200 bg-emerald-50/40 p-3">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-emerald-900">
-            메뉴 추천
-          </span>
+          <span className="text-sm font-medium text-emerald-900">메뉴 추천</span>
           <button
             type="button"
             onClick={() => setSuggestions(suggestMeals(slot, 3))}
@@ -206,9 +148,6 @@ export function MealForm({
           >
             🍽 {SLOT_LABEL[slot]} 메뉴 제안받기
           </button>
-          <span className="text-xs text-emerald-800">
-            저탄저지·고단백 위주
-          </span>
         </div>
         {suggestions.length > 0 && (
           <div className="grid gap-2 sm:grid-cols-3">
@@ -225,9 +164,6 @@ export function MealForm({
                     {s.description}
                   </div>
                 )}
-                <div className="mt-1 text-[11px] text-muted-foreground">
-                  {s.calories}kcal · C{s.carbG} P{s.proteinG} F{s.fatG}
-                </div>
               </button>
             ))}
           </div>
@@ -240,121 +176,11 @@ export function MealForm({
           required
           rows={2}
           value={menu}
-          onChange={(e) => {
-            setMenu(e.target.value);
-            setMatchOverrides({});
-          }}
-          placeholder="예: 닭가슴살 100g + 현미밥 1/2공기 + 샐러드"
+          onChange={(e) => setMenu(e.target.value)}
+          placeholder="예: 닭가슴살 + 현미밥 1/2공기 + 샐러드"
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>
-
-      {matches.length > 0 && (
-        <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <div>
-              <span className="text-sm font-medium text-amber-900">
-                메뉴에서 인식된 음식
-              </span>
-              <span className="ml-2 text-[11px] text-amber-800">
-                ±로 인분 조정 가능 · 수량 자동 인식 안 됨
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={applyMatchEstimate}
-              className="rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700"
-            >
-              추정값 칼로리에 적용 (≈{matchTotal.calories}kcal)
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {matches.map((m) => (
-              <div
-                key={m.entry.label}
-                className="flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs"
-              >
-                <button
-                  type="button"
-                  onClick={() => bumpMatch(m.entry.label, -1)}
-                  className="rounded-full px-1 text-amber-700 hover:bg-amber-100"
-                  aria-label="감소"
-                >
-                  −
-                </button>
-                <span className="font-medium">
-                  {m.entry.label}
-                </span>
-                <span className="text-muted-foreground">
-                  ×{m.count}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  ({m.entry.portion}, {m.entry.calories}kcal)
-                </span>
-                <button
-                  type="button"
-                  onClick={() => bumpMatch(m.entry.label, +1)}
-                  className="rounded-full px-1 text-amber-700 hover:bg-amber-100"
-                  aria-label="증가"
-                >
-                  +
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground">
-            합계 ≈ {matchTotal.calories}kcal · C{matchTotal.carbG} P
-            {matchTotal.proteinG} F{matchTotal.fatG}
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="칼로리 (kcal)">
-          <input
-            type="number"
-            name="calories"
-            min={0}
-            step={10}
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="탄수 (g)">
-          <input
-            type="number"
-            name="carbG"
-            min={0}
-            step={1}
-            value={carbG}
-            onChange={(e) => setCarbG(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="단백질 (g)">
-          <input
-            type="number"
-            name="proteinG"
-            min={0}
-            step={1}
-            value={proteinG}
-            onChange={(e) => setProteinG(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
-        <Field label="지방 (g)">
-          <input
-            type="number"
-            name="fatG"
-            min={0}
-            step={1}
-            value={fatG}
-            onChange={(e) => setFatG(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-        </Field>
-      </div>
 
       <Field label="태그">
         <TagPicker
@@ -405,16 +231,17 @@ export function MealForm({
                   className="rounded-md border bg-white p-2 text-left text-xs hover:border-emerald-400 hover:bg-emerald-50"
                 >
                   <div className="font-medium">{m.name}</div>
-                  <div className="mt-0.5 text-muted-foreground">
-                    {m.calories}kcal · C{m.carbG} P{m.proteinG} F{m.fatG}
-                  </div>
+                  {m.description && (
+                    <div className="mt-0.5 text-muted-foreground">
+                      {m.description}
+                    </div>
+                  )}
                 </button>
               ))
             )}
           </div>
         </details>
       </div>
-
     </form>
   );
 }

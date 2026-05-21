@@ -6,11 +6,9 @@ import {
   getProfile,
   listAppointments,
   listHealthLogs,
-  listMeals,
   listVisits,
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
-import { calorieTargetFor, sumCalories } from "@/lib/calorie";
 import { todayKST } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +21,10 @@ export default async function HomePage({
   const sp = await searchParams;
   const initialSubject = asPerson(sp.subject);
 
-  // 캘린더는 visits + appointments. health/meals는 박란하 스냅샷용.
-  const [allAppts, allHealth, allMeals, allVisits, profile] = await Promise.all([
+  // 캘린더는 visits + appointments. health는 박란하 스냅샷용.
+  const [allAppts, allHealth, allVisits, profile] = await Promise.all([
     listAppointments(),
     listHealthLogs(),
-    listMeals(),
     listVisits(),
     getProfile("박란하"),
   ]);
@@ -39,11 +36,6 @@ export default async function HomePage({
   const latestMood = lanhaHealth.find((h) => h.moodScale != null);
   const latestSleep = lanhaHealth.find((h) => h.sleepHours != null);
   const latestWeightLog = lanhaHealth.find((h) => h.weight != null);
-  const target = calorieTargetFor(profile, latestWeightLog?.weight ?? null);
-  const todayMeals = allMeals.filter(
-    (m) => m.date === todayKey && asPerson(m.subject) === "박란하",
-  );
-  const kcalSum = sumCalories(todayMeals);
   const startWeight = profile?.startWeightKg;
   const weightDelta =
     latestWeightLog?.weight != null && startWeight != null
@@ -61,9 +53,6 @@ export default async function HomePage({
         latestWeightDate: latestWeightLog?.date,
         weightDeltaSinceStart: weightDelta,
         startWeight,
-        targetKcal: target?.target,
-        todayKcal: kcalSum.kcal,
-        todayCounted: kcalSum.counted,
       }
     : null;
 

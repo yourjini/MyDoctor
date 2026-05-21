@@ -9,7 +9,7 @@ import {
   getMeal,
   updateMeal,
 } from "@/lib/store";
-import type { Meal, MealMacros, MealSlot } from "@/lib/types";
+import type { Meal, MealSlot } from "@/lib/types";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -38,22 +38,6 @@ function parseTags(formData: FormData, name: string): string[] {
   );
 }
 
-function parseNumber(formData: FormData, name: string): number | undefined {
-  const raw = String(formData.get(name) || "").trim();
-  if (!raw) return undefined;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 0) return undefined;
-  return n;
-}
-
-function parseMacros(formData: FormData): MealMacros | undefined {
-  const c = parseNumber(formData, "carbG");
-  const p = parseNumber(formData, "proteinG");
-  const f = parseNumber(formData, "fatG");
-  if (c == null && p == null && f == null) return undefined;
-  return { carbG: c, proteinG: p, fatG: f };
-}
-
 function parseTime(formData: FormData): string | undefined {
   const raw = String(formData.get("time") || "").trim();
   if (!raw) return undefined;
@@ -74,8 +58,6 @@ export async function createMealAction(formData: FormData) {
   const subject = asPerson(formData.get("subject"));
   const slot = parseSlot(formData);
   const menu = String(formData.get("menu") || "").trim();
-  const calories = parseNumber(formData, "calories");
-  const macros = parseMacros(formData);
   const tags = parseTags(formData, "tags");
   const note = String(formData.get("note") || "").trim() || undefined;
   const time = parseTime(formData);
@@ -93,8 +75,6 @@ export async function createMealAction(formData: FormData) {
     time,
     slot,
     menu,
-    calories,
-    macros,
     tags,
     rating,
     note,
@@ -122,8 +102,6 @@ export async function updateMealAction(formData: FormData) {
     subject: asPerson(formData.get("subject")),
     slot: parseSlot(formData),
     menu: String(formData.get("menu") || "").trim(),
-    calories: parseNumber(formData, "calories"),
-    macros: parseMacros(formData),
     tags: parseTags(formData, "tags"),
     note: String(formData.get("note") || "").trim() || undefined,
     time: parseTime(formData),
@@ -167,8 +145,6 @@ async function moveMealToNewMonth(
     time: merged.time,
     slot: merged.slot,
     menu: merged.menu,
-    calories: merged.calories,
-    macros: merged.macros,
     tags: merged.tags,
     rating: merged.rating,
     note: merged.note,

@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   return (
     <PageShell title="프로필">
       <p className="mb-4 text-sm text-muted-foreground">
-        생년월일·키·활동량을 입력하면 칼로리 목표가 계산됩니다. 식단 관리에 사용돼요.
+        가족 구성원의 기본 정보(생년월일·키·체중 등)를 모아둡니다.
       </p>
       <div className="space-y-6">
         {profiles.map(({ person, profile }) => (
