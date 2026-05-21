@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { Person } from "@/lib/people";
+import { PersonSwitcher } from "./PersonSwitcher";
 
 // ----------------------------------------------------------------------
 // 모바일·데스크탑이 같은 정보 구조를 쓴다. 항목·라벨·그룹 모두 동일.
@@ -23,32 +25,35 @@ type LeafLink = {
 
 const PRIMARY: LeafLink[] = [
   { href: "/", label: "오늘", icon: IconHome },
-  { href: "/health", label: "건강일지", short: "일지", icon: IconHeart },
-  { href: "/health/chart", label: "그래프", icon: IconChart },
+  { href: "/health", label: "데일리리포트", short: "리포트", icon: IconHeart },
+  { href: "/conditions", label: "건강일지", icon: IconPulse },
   { href: "/visits", label: "방문이력", short: "방문", icon: IconStethoscope },
-  { href: "/appointments", label: "예약", icon: IconCalendar },
 ];
 
 const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
   {
-    label: "의료기록",
+    label: "데일리리포트",
     items: [
-      { href: "/checkups", label: "건강검진", icon: IconClipboard },
-      { href: "/notes", label: "선생님메모", icon: IconNote },
-    ],
-  },
-  {
-    label: "건강추적",
-    items: [
-      { href: "/meals", label: "식단", icon: IconUtensils },
-      { href: "/period", label: "생리주기", icon: IconDrop },
-      { href: "/cautions", label: "주의음식", icon: IconAlert },
+      { href: "/health/chart", label: "그래프", icon: IconChart },
       { href: "/diary", label: "다이어리", icon: IconLock },
     ],
   },
   {
+    label: "병원 진료",
+    items: [
+      { href: "/appointments", label: "예약", icon: IconCalendar },
+      { href: "/checkups", label: "건강검진", icon: IconClipboard },
+    ],
+  },
+  {
     label: "기타",
-    items: [{ href: "/profile", label: "프로필", icon: IconUser }],
+    items: [
+      { href: "/meals", label: "식단", icon: IconUtensils },
+      { href: "/period", label: "생리주기", icon: IconDrop },
+      { href: "/cautions", label: "주의음식", icon: IconAlert },
+      { href: "/notes", label: "선생님메모", icon: IconNote },
+      { href: "/profile", label: "프로필", icon: IconUser },
+    ],
   },
 ];
 
@@ -71,7 +76,11 @@ function activeHrefFor(pathname: string): string {
   return best;
 }
 
-export function Nav() {
+export function Nav({
+  currentPerson = "박란하",
+}: {
+  currentPerson?: Person;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -199,6 +208,13 @@ export function Nav() {
               )}
             </svg>
           </button>
+        </div>
+
+        {/* 전역 인물 선택 행 — 모바일·데스크탑 공통, 항상 보임 */}
+        <div className="border-t bg-background/60">
+          <div className="container-narrow flex items-center justify-center py-1.5 sm:justify-start">
+            <PersonSwitcher current={currentPerson} />
+          </div>
         </div>
 
         {/* 모바일 더보기 드로어 (상단바 아래로 펼침) */}
@@ -424,6 +440,15 @@ function IconChart({ className }: { className?: string }) {
     <>
       <path d="M3 3v18h18" />
       <polyline points="7 14 11 10 14 13 20 7" />
+    </>,
+    className,
+  );
+}
+function IconPulse({ className }: { className?: string }) {
+  return svg(
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 12h4l2-4 3 8 2-5 1 1h6" />
     </>,
     className,
   );

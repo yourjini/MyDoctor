@@ -136,6 +136,60 @@ export type Meal = {
   updatedAt: string;
 };
 
+// 부위별 질환 트래커 ("건강일지"). 한 사람의 만성/추적 질환을 부위 단위로
+// 모으고, 각 질환 아래 검사 이력(ConditionExam)을 시간순으로 쌓는다.
+export type ConditionStatus = "추적중" | "검사필요" | "치료중" | "해결됨";
+
+export type BodyPart =
+  | "유방"
+  | "갑상선"
+  | "위"
+  | "자궁"
+  | "자궁경부"
+  | "폐"
+  | "간"
+  | "대장"
+  | "골밀도"
+  | "심혈관"
+  | "기타";
+
+export type ExamType =
+  | "초음파"
+  | "조직검사"
+  | "CT"
+  | "내시경"
+  | "혈액"
+  | "엑스레이"
+  | "기타";
+
+export type HealthCondition = {
+  id: string;
+  kind: "condition";
+  subject: string; // 부위별 트래커는 사람 단위 (필수)
+  bodyPart: BodyPart | string;
+  diagnosis: string; // 진단명: "우측 17mm 결절"
+  status: ConditionStatus;
+  summary?: string; // 요약 본문
+  nextAction?: string; // 다음 일정/액션: "2026.08 복부 CT"
+  nextDate?: string; // YYYY-MM-DD (있으면 정렬·강조용)
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ConditionExam = {
+  id: string;
+  kind: "exam";
+  conditionId: string; // FK → HealthCondition.id
+  subject: string; // condition과 동일 (목록 필터 편의)
+  date: string; // YYYY-MM-DD
+  org?: string; // 기관: 메디스캔 등
+  examType?: ExamType | string;
+  findings: string; // 소견·결과 본문
+  attachments?: Attachment[]; // 향후 확장용 (v1 미사용)
+  createdAt: string;
+  updatedAt: string;
+};
+
 // Food / drink / substance the family should be cautious about,
 // usually because it interacts with 박란하's medications.
 export type CautionSeverity = "danger" | "warning" | "caution";
@@ -196,4 +250,6 @@ export type AnyRecord =
   | Meal
   | DiaryEntry
   | CautionItem
-  | ClinicNote;
+  | ClinicNote
+  | HealthCondition
+  | ConditionExam;

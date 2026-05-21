@@ -4,7 +4,7 @@ export const KIND_LABEL: Record<RecordKind, string> = {
   visit: "방문이력",
   appointment: "예약",
   checkup: "건강검진",
-  health: "건강일지",
+  health: "데일리리포트",
 };
 
 export type KindStyle = {

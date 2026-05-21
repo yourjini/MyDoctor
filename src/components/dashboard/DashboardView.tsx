@@ -158,27 +158,31 @@ function ClientSubjectFilter({
 
 const SITEMAP_GROUPS: { label: string; items: { href: string; label: string }[] }[] = [
   {
-    label: "의료기록",
+    label: "데일리리포트",
+    items: [
+      { href: "/health", label: "데일리리포트" },
+      { href: "/health/chart", label: "그래프" },
+      { href: "/diary", label: "🔒 다이어리" },
+    ],
+  },
+  {
+    label: "병원 진료",
     items: [
       { href: "/visits", label: "방문이력" },
+      { href: "/conditions", label: "건강일지" },
       { href: "/appointments", label: "예약" },
       { href: "/checkups", label: "건강검진" },
     ],
   },
   {
-    label: "건강추적",
+    label: "기타",
     items: [
-      { href: "/health", label: "건강일지" },
-      { href: "/health/chart", label: "그래프" },
-      { href: "/period", label: "생리주기" },
       { href: "/meals", label: "식단" },
+      { href: "/period", label: "생리주기" },
       { href: "/cautions", label: "주의음식" },
-      { href: "/diary", label: "🔒 다이어리" },
+      { href: "/notes", label: "선생님메모" },
+      { href: "/profile", label: "프로필" },
     ],
-  },
-  {
-    label: "설정",
-    items: [{ href: "/profile", label: "프로필" }],
   },
 ];
 

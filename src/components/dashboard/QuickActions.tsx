@@ -6,7 +6,7 @@ import Link from "next/link";
 const ACTIONS = [
   {
     href: "/health/new",
-    label: "건강일지",
+    label: "데일리리포트",
     sub: "기분·수면·체중",
     cls: "bg-rose-500 hover:bg-rose-600",
   },

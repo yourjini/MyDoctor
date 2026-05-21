@@ -15,7 +15,9 @@ import type {
   CautionItem,
   Checkup,
   ClinicNote,
+  ConditionExam,
   DiaryEntry,
+  HealthCondition,
   HealthLog,
   Meal,
   MenstrualCycle,
@@ -63,6 +65,13 @@ const cautionFile = (id: string) => `data/cautions/${id}.json`;
 
 // Clinic notes: flat, lifecycle-based (pending → done). Few open at a time.
 const clinicNoteFile = (id: string) => `data/notes/${id}.json`;
+
+// 부위별 질환 트래커. condition은 flat, exam은 그 하위에 누적.
+const conditionRoot = "data/conditions";
+const conditionFile = (id: string) => `${conditionRoot}/${id}.json`;
+const examDir = (conditionId: string) => `${conditionRoot}/${conditionId}/exams`;
+const examFile = (conditionId: string, examId: string) =>
+  `${examDir(conditionId)}/${examId}.json`;
 
 function ymOf(date: string): { year: string; month: string } {
   return { year: date.slice(0, 4), month: date.slice(5, 7) };
@@ -870,6 +879,172 @@ export async function updateClinicNote(
 
 export async function deleteClinicNote(id: string): Promise<void> {
   await deleteFile(clinicNoteFile(id), `delete clinic note ${id}`);
+}
+
+// ============================================================
+// 부위별 질환 트래커 (건강일지) — HealthCondition + ConditionExam
+// ============================================================
+
+export async function listConditions(): Promise<HealthCondition[]> {
+  const all = await listAllJSON<HealthCondition>(conditionRoot);
+  // listAllJSON은 하위 exam 파일까지 가져오므로 kind로 분리.
+  return all.filter((c) => c.kind === "condition");
+}
+
+// condition + exam을 한 번의 walk로 모두 읽어 분리 (목록 페이지의 N+1 방지).
+export async function listConditionRecords(): Promise<{
+  conditions: HealthCondition[];
+  exams: ConditionExam[];
+}> {
+  const all = await listAllJSON<HealthCondition | ConditionExam>(conditionRoot);
+  const conditions: HealthCondition[] = [];
+  const exams: ConditionExam[] = [];
+  for (const r of all) {
+    if (r.kind === "condition") conditions.push(r as HealthCondition);
+    else if (r.kind === "exam") exams.push(r as ConditionExam);
+  }
+  return { conditions, exams };
+}
+
+export async function getCondition(
+  id: string,
+): Promise<HealthCondition | null> {
+  return readJSON<HealthCondition>(conditionFile(id));
+}
+
+export async function createCondition(
+  input: Omit<HealthCondition, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<HealthCondition> {
+  const id = uuid();
+  const now = new Date().toISOString();
+  const condition: HealthCondition = {
+    id,
+    kind: "condition",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(
+      conditionFile(id),
+      condition,
+      `add condition ${input.bodyPart} ${input.diagnosis}`,
+    );
+  } catch (err) {
+    throw new Error(`질환 저장 실패: ${describeError(err)}`);
+  }
+  return condition;
+}
+
+export async function updateCondition(
+  id: string,
+  patch: Partial<HealthCondition>,
+): Promise<HealthCondition | null> {
+  const current = await getCondition(id);
+  if (!current) return null;
+  const next: HealthCondition = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "condition",
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(conditionFile(id), next, `update condition ${id}`);
+  } catch (err) {
+    throw new Error(`질환 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+async function deleteTree(path: string): Promise<void> {
+  const entries = await listDir(path);
+  for (const e of entries) {
+    if (e.type === "dir") {
+      await deleteTree(e.path);
+    } else {
+      await deleteFile(e.path, `delete ${e.path}`);
+    }
+  }
+}
+
+export async function deleteCondition(id: string): Promise<void> {
+  // 하위 exam 파일·첨부(향후) 전체를 재귀로 정리한 뒤 condition 삭제.
+  await deleteTree(examDir(id));
+  await deleteFile(conditionFile(id), `delete condition ${id}`);
+}
+
+export async function listExamsFor(
+  conditionId: string,
+): Promise<ConditionExam[]> {
+  const all = await listAllJSON<ConditionExam>(examDir(conditionId));
+  return all
+    .filter((e) => e.kind === "exam")
+    .sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+}
+
+export async function getExam(
+  conditionId: string,
+  examId: string,
+): Promise<ConditionExam | null> {
+  return readJSON<ConditionExam>(examFile(conditionId, examId));
+}
+
+export async function createExam(
+  input: Omit<ConditionExam, "id" | "kind" | "createdAt" | "updatedAt">,
+): Promise<ConditionExam> {
+  const id = uuid();
+  const now = new Date().toISOString();
+  const exam: ConditionExam = {
+    id,
+    kind: "exam",
+    ...input,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    await writeJSON(
+      examFile(input.conditionId, id),
+      exam,
+      `add exam ${input.date} (${input.conditionId})`,
+    );
+  } catch (err) {
+    throw new Error(`검사 기록 저장 실패: ${describeError(err)}`);
+  }
+  return exam;
+}
+
+export async function updateExam(
+  conditionId: string,
+  examId: string,
+  patch: Partial<ConditionExam>,
+): Promise<ConditionExam | null> {
+  const current = await getExam(conditionId, examId);
+  if (!current) return null;
+  const next: ConditionExam = {
+    ...current,
+    ...patch,
+    id: current.id,
+    kind: "exam",
+    conditionId: current.conditionId,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await writeJSON(examFile(conditionId, examId), next, `update exam ${examId}`);
+  } catch (err) {
+    throw new Error(`검사 기록 수정 실패: ${describeError(err)}`);
+  }
+  return next;
+}
+
+export async function deleteExam(
+  conditionId: string,
+  examId: string,
+): Promise<void> {
+  await deleteFile(examFile(conditionId, examId), `delete exam ${examId}`);
 }
 
 // ============================================================

@@ -9,7 +9,7 @@ export default async function HealthChartPage() {
   const logs = await listHealthLogs();
   return (
     <PageShell
-      title="건강일지 그래프"
+      title="데일리리포트 그래프"
       action={
         <Link
           href="/health"

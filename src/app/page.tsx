@@ -9,6 +9,7 @@ import {
   listVisits,
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
+import { currentSubject } from "@/lib/current-subject";
 import { todayKST } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,9 @@ export default async function HomePage({
   searchParams: Promise<{ subject?: string }>;
 }) {
   const sp = await searchParams;
-  const initialSubject = asPerson(sp.subject);
+  // 상단 전역 인물 선택기(쿠키)를 초기값으로. URL 파라미터가 있으면 우선.
+  const initialSubject =
+    sp.subject != null ? asPerson(sp.subject) : await currentSubject("박란하");
 
   // 캘린더는 visits + appointments. health는 박란하 스냅샷용.
   const [allAppts, allHealth, allVisits, profile] = await Promise.all([

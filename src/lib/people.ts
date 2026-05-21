@@ -6,6 +6,9 @@ export type Person = (typeof PEOPLE)[number];
 
 export const DEFAULT_PERSON: Person = "전체";
 
+// 전역 인물 컨텍스트 쿠키 이름. (서버/클라이언트 양쪽에서 안전하게 import)
+export const SUBJECT_COOKIE = "md_subject";
+
 export function isPerson(value: unknown): value is Person {
   return typeof value === "string" && (PEOPLE as readonly string[]).includes(value);
 }

@@ -50,7 +50,7 @@ export default async function HealthPage({
 
   return (
     <PageShell
-      title="건강일지"
+      title="데일리리포트"
       action={
         <div className="flex items-center gap-2">
           <Link
