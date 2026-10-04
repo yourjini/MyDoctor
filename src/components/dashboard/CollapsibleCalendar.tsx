@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, type CalendarEvent } from "@/components/Calendar";
 
 // Calendar wrapped in a collapsible disclosure. Default-collapsed on mobile
@@ -16,7 +16,14 @@ export function CollapsibleCalendar({
   defaultOpen?: boolean;
   badge?: string;
 }) {
+  // Mobile 디폴트는 접힘, 데스크톱(≥640px)은 펼침. 서버 렌더링은 접힘으로
+  // 보수적으로 시작하고 클라이언트에서 viewport 체크 후 조정.
   const [open, setOpen] = useState(defaultOpen);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 640px)");
+    setOpen(mq.matches);
+  }, []);
 
   return (
     <section className="rounded-lg border bg-card">

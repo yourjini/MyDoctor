@@ -16,32 +16,35 @@ export type LanhaSnapshot = {
   startWeight?: number;
 };
 
+const LANHA_SUBJECT = "%EB%B0%95%EB%9E%80%ED%95%98"; // encoded 박란하
+
 export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
   return (
-    <section className="rounded-lg border bg-card p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-pink-500 text-xs font-medium text-white">
-            란
-          </span>
-          <h2 className="text-sm font-semibold">오늘의 란하</h2>
+    <section
+      className="rounded-2xl border bg-gradient-to-br from-rose-50 via-background to-background p-4 sm:p-5 dark:from-rose-950/30"
+    >
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-sm font-semibold text-white">
+          란
+        </span>
+        <div>
+          <h2 className="text-base font-semibold leading-tight">오늘의 란하</h2>
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            최근 기록 {fmtDate(snap.latestMoodDate) || fmtDate(snap.latestSleepDate) || fmtDate(snap.latestWeightDate)}
+          </div>
         </div>
-        <Link
-          href="/health/new?subject=%EB%B0%95%EB%9E%80%ED%95%98"
-          className="rounded-md bg-rose-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-rose-600"
-        >
-          + 일지
-        </Link>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <Tile
+        <TileLink
+          href={`/health/new?subject=${LANHA_SUBJECT}&field=mood`}
           label="기분"
           value={moodLabel(snap.latestMoodScale)}
           sub={fmtDate(snap.latestMoodDate)}
           accent={moodAccent(snap.latestMoodScale)}
         />
-        <Tile
+        <TileLink
+          href={`/health/new?subject=${LANHA_SUBJECT}&field=sleep`}
           label="수면"
           value={
             snap.latestSleepHours != null
@@ -51,7 +54,8 @@ export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
           sub={fmtDate(snap.latestSleepDate)}
           accent={sleepAccent(snap.latestSleepHours)}
         />
-        <Tile
+        <TileLink
+          href={`/health/new?subject=${LANHA_SUBJECT}&field=weight`}
           label="체중"
           value={
             snap.latestWeight != null ? `${snap.latestWeight}kg` : "—"
@@ -64,25 +68,37 @@ export function LanhaTodayCard({ snap }: { snap: LanhaSnapshot }) {
           accent={weightAccent(snap.weightDeltaSinceStart)}
         />
       </div>
+
+      <Link
+        href={`/health/new?subject=${LANHA_SUBJECT}`}
+        className="mt-4 flex min-h-[52px] items-center justify-center rounded-xl bg-rose-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-rose-600"
+      >
+        + 오늘 리포트 기록하기
+      </Link>
     </section>
   );
 }
 
-function Tile({
+function TileLink({
+  href,
   label,
   value,
   sub,
   accent,
 }: {
+  href: string;
   label: string;
   value: string;
   sub?: string;
   accent?: string;
 }) {
   return (
-    <div className="rounded-md border bg-background/40 p-2.5">
+    <Link
+      href={href}
+      className="group block min-h-[76px] rounded-xl border bg-card p-2.5 transition-colors hover:border-border/80 hover:bg-accent/40"
+    >
       <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className={cn("mt-0.5 text-lg font-semibold leading-tight", accent)}>
+      <div className={cn("mt-1 text-lg font-semibold leading-tight", accent)}>
         {value}
       </div>
       {sub && (
@@ -90,7 +106,7 @@ function Tile({
           {sub}
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 
@@ -125,7 +141,7 @@ function weightAccent(delta?: number): string {
 }
 
 function fmtDate(d?: string): string {
-  if (!d) return "기록 없음";
+  if (!d) return "";
   const [, m, day] = d.split("-");
   if (!m || !day) return d;
   return `${Number(m)}/${Number(day)}`;
