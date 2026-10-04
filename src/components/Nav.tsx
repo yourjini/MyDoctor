@@ -130,17 +130,15 @@ export function Nav({
       {/* ─── 상단 바 ────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="container-narrow flex items-center justify-between gap-2 py-3">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+          <Link href="/" aria-label="홈" className="inline-flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
-              alt=""
-              aria-hidden
-              width={25}
-              height={32}
-              className="h-8 w-auto"
+              alt="MyDoctor"
+              width={32}
+              height={40}
+              className="h-10 w-auto"
             />
-            MyDoctor
           </Link>
 
           {/* 데스크탑: 1차 탭 + 더보기 (≥sm) */}
