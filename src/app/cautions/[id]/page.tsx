@@ -21,7 +21,7 @@ export default async function CautionDetailPage({
       action={
         <Link
           href="/cautions"
-          className="text-sm text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:underline"
         >
           ← 목록
         </Link>

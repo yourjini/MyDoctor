@@ -33,7 +33,7 @@ export default async function DiaryPage() {
           <DiaryLogoutButton />
           <Link
             href="/diary/new"
-            className="rounded-md bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+            className="inline-flex min-h-11 items-center rounded-md bg-slate-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
           >
             + 새 글
           </Link>

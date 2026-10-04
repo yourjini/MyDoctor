@@ -23,7 +23,7 @@ export default async function AppointmentDetail({
       action={
         <Link
           href="/appointments"
-          className="text-sm text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:underline"
         >
           ← 목록
         </Link>
@@ -41,7 +41,7 @@ export default async function AppointmentDetail({
           <input type="hidden" name="year" value={year} />
           <button
             type="submit"
-            className="text-xs text-destructive hover:underline"
+            className="inline-flex min-h-11 items-center px-2 text-xs text-destructive hover:underline"
           >
             삭제
           </button>

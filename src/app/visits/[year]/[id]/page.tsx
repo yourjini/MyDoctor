@@ -24,7 +24,7 @@ export default async function VisitDetail({
       action={
         <Link
           href="/visits"
-          className="text-sm text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:underline"
         >
           ← 목록
         </Link>
@@ -46,7 +46,7 @@ export default async function VisitDetail({
         <form action={deleteVisitAction}>
           <input type="hidden" name="id" value={visit.id} />
           <input type="hidden" name="year" value={year} />
-          <button type="submit" className="rounded text-destructive hover:underline">
+          <button type="submit" className="inline-flex min-h-11 items-center rounded px-2 text-destructive hover:underline">
             삭제
           </button>
         </form>

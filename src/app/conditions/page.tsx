@@ -53,7 +53,7 @@ export default async function ConditionsPage() {
       action={
         <Link
           href="/conditions/new"
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+          className="inline-flex min-h-11 items-center rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
         >
           + 질환 추가
         </Link>

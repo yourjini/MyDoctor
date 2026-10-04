@@ -50,7 +50,7 @@ export function SubjectFilter({
             aria-selected={active}
             onClick={() => selectPerson(p)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              "inline-flex min-h-11 items-center rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
               active ? colors.pillActive : colors.pill,
             )}
           >

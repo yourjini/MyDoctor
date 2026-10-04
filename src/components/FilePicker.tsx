@@ -130,7 +130,7 @@ export function FilePicker({
           type="button"
           onClick={() => visibleRef.current?.click()}
           disabled={busy || disabled}
-          className="rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex min-h-11 items-center rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent disabled:cursor-wait disabled:opacity-60"
         >
           + 파일 선택
         </button>

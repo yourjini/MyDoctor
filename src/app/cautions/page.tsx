@@ -47,7 +47,7 @@ export default async function CautionsPage() {
       action={
         <Link
           href="/cautions/new"
-          className="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
+          className="inline-flex min-h-11 items-center rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
         >
           + 항목 추가
         </Link>

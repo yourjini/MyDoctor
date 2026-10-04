@@ -30,7 +30,7 @@ export default async function NotesPage({
       action={
         <Link
           href="/notes/new"
-          className="rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-pink-700"
+          className="inline-flex min-h-11 items-center rounded-md bg-pink-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-pink-700"
         >
           + 새 메모
         </Link>

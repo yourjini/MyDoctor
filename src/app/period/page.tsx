@@ -45,7 +45,7 @@ export default async function PeriodPage({
       action={
         <Link
           href={`/period/new${filter !== "전체" ? `?subject=${encodeURIComponent(filter)}` : ""}`}
-          className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
+          className="inline-flex min-h-11 items-center rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
           + 수동 입력
         </Link>
@@ -122,7 +122,7 @@ function SubjectSummaryCard({
         </Link>
         <Link
           href={`/period?subject=${encodeURIComponent(subject)}`}
-          className="text-xs text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-xs text-muted-foreground hover:underline"
         >
           상세 →
         </Link>

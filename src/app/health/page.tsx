@@ -23,8 +23,8 @@ export default async function HealthPage({
   searchParams: Promise<{ subject?: string; q?: string; range?: string }>;
 }) {
   const sp = await searchParams;
-  // 80% 사용 패턴 — subject 파라미터 없으면 박란하 디폴트
-  const filter = sp.subject == null ? "박란하" : asPerson(sp.subject);
+  // 디폴트는 "전체" — 다른 페이지와 일관성.
+  const filter = asPerson(sp.subject);
   const query = (sp.q ?? "").trim().toLowerCase();
   const range = sp.range ?? "30";
 
@@ -55,14 +55,14 @@ export default async function HealthPage({
         <div className="flex items-center gap-2">
           <Link
             href="/health/chart"
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+            className="inline-flex min-h-11 items-center rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
           >
             그래프
           </Link>
           <Link
             href="/health/new"
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "inline-flex min-h-11 items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               KIND_STYLES.health.solid,
             )}
           >
@@ -74,7 +74,7 @@ export default async function HealthPage({
       <div className="mb-3 space-y-2">
         <SearchBar placeholder="태그·메모 검색" />
         <div className="flex flex-wrap items-center gap-3">
-          <SubjectFilter defaultPerson="박란하" />
+          <SubjectFilter />
           <RangeFilter current={range} />
         </div>
       </div>

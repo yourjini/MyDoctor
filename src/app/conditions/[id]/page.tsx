@@ -23,7 +23,7 @@ export default async function ConditionDetailPage({
       action={
         <Link
           href="/conditions"
-          className="text-sm text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:underline"
         >
           ← 건강자료
         </Link>

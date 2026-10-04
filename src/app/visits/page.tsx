@@ -35,7 +35,7 @@ export default async function VisitsPage({
         <Link
           href="/visits/new"
           className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            "inline-flex min-h-11 items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
             KIND_STYLES.visit.solid,
           )}
         >

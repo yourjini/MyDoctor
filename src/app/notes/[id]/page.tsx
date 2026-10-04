@@ -21,7 +21,7 @@ export default async function ClinicNoteDetailPage({
       action={
         <Link
           href="/notes"
-          className="text-sm text-muted-foreground hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground hover:underline"
         >
           ← 목록
         </Link>
