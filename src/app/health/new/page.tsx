@@ -18,7 +18,7 @@ export default async function NewHealthLogPage({
     .sort((a, b) => b.date.localeCompare(a.date))[0]?.weight;
 
   return (
-    <PageShell title="새 데일리리포트">
+    <PageShell title="새 리포트">
       <form
         action={createHealthLogAction}
         className="space-y-5 rounded-lg border bg-card p-4 sm:p-5"

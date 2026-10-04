@@ -25,7 +25,7 @@ export default async function ConditionDetailPage({
           href="/conditions"
           className="text-sm text-muted-foreground hover:underline"
         >
-          ← 건강일지
+          ← 건강자료
         </Link>
       }
     >

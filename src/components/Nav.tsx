@@ -12,8 +12,9 @@ import { PersonSwitcher } from "./PersonSwitcher";
 // 시각만 다름: 모바일은 상단(로고+더보기) + 하단탭, 데스크탑은 상단바
 // (로고 + 1차 탭 + 더보기) 한 줄.
 //
-// 1차(가장 자주): 오늘 · 건강일지 · 그래프(란하 양극성) · 방문이력 · 예약
-// 더보기: 의료기록 / 건강추적 / 기타
+// 1차: 홈 · 리포트 · 건강자료 · 방문이력
+// 더보기: 리포트 보조 / 병원 진료 / 기타
+// (/checkups 는 "건강자료" 탭 안으로 흡수되므로 1차에서 제외)
 // ----------------------------------------------------------------------
 
 type LeafLink = {
@@ -24,15 +25,15 @@ type LeafLink = {
 };
 
 const PRIMARY: LeafLink[] = [
-  { href: "/", label: "오늘", icon: IconHome },
-  { href: "/health", label: "데일리리포트", short: "리포트", icon: IconHeart },
-  { href: "/conditions", label: "건강일지", icon: IconPulse },
+  { href: "/", label: "홈", icon: IconHome },
+  { href: "/health", label: "리포트", icon: IconHeart },
+  { href: "/conditions", label: "건강자료", short: "자료", icon: IconPulse },
   { href: "/visits", label: "방문이력", short: "방문", icon: IconStethoscope },
 ];
 
 const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
   {
-    label: "데일리리포트",
+    label: "리포트 보조",
     items: [
       { href: "/health/chart", label: "그래프", icon: IconChart },
       { href: "/diary", label: "다이어리", icon: IconLock },
@@ -119,7 +120,7 @@ export function Nav({
           서로 싸우지 않음 (이전 mousedown 레이스 버그 제거). */}
       {moreOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/20 sm:bg-transparent"
+          className="fixed inset-0 z-30 bg-black/10 sm:bg-transparent"
           aria-hidden
           onClick={() => setMoreOpen(false)}
         />

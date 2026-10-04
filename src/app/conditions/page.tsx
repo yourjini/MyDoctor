@@ -48,7 +48,7 @@ export default async function ConditionsPage() {
 
   return (
     <PageShell
-      title="건강일지"
+      title="건강자료"
       action={
         <Link
           href="/conditions/new"

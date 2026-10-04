@@ -30,7 +30,7 @@ export default async function HealthDetail({
 
   return (
     <PageShell
-      title="데일리리포트 상세"
+      title="리포트 상세"
       action={
         <Link
           href="/health"
