@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { HealthDataTabs } from "@/components/HealthDataTabs";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
@@ -58,6 +59,7 @@ export default async function ConditionsPage() {
         </Link>
       }
     >
+      <HealthDataTabs />
       <div className="mb-4 flex items-center gap-2">
         <SubjectBadge subject={filter} size="sm" showName />
         <p className="text-sm text-muted-foreground">

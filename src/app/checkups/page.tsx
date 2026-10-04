@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { HealthDataTabs } from "@/components/HealthDataTabs";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { SubjectFilter } from "@/components/SubjectFilter";
 import { listCheckups } from "@/lib/store";
@@ -30,7 +31,7 @@ export default async function CheckupsPage({
 
   return (
     <PageShell
-      title="건강검진"
+      title="건강자료"
       action={
         <Link
           href="/checkups/new"
@@ -43,6 +44,7 @@ export default async function CheckupsPage({
         </Link>
       }
     >
+      <HealthDataTabs />
       <div className="mb-4">
         <SubjectFilter />
       </div>

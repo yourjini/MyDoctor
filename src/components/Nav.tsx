@@ -43,8 +43,8 @@ const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
     label: "병원 진료",
     items: [
       { href: "/appointments", label: "예약", icon: IconCalendar },
-      { href: "/checkups", label: "건강검진", icon: IconClipboard },
-      { href: "/attachments", label: "첨부 자료", icon: IconPaperclip },
+      // /checkups 와 /attachments 는 "건강자료" 1차 탭 안에서 접근
+      // (/conditions · /checkups · /attachments 공유 탭 UI).
     ],
   },
   {

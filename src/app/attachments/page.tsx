@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
+import { HealthDataTabs } from "@/components/HealthDataTabs";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { KindChip } from "@/components/KindChip";
 import { distinctHospitalsOf, listAllAttachments } from "@/lib/attachments";
@@ -49,7 +50,8 @@ export default async function AttachmentsPage({
   const months = Array.from(byMonth.keys()).sort((a, b) => b.localeCompare(a));
 
   return (
-    <PageShell title="첨부 자료">
+    <PageShell title="건강자료">
+      <HealthDataTabs />
       <section className="mb-5 space-y-3 rounded-lg border bg-card p-4">
         <h2 className="text-sm font-semibold">필터</h2>
 
