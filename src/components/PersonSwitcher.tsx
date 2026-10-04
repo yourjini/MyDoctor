@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { PERSON_COLORS, SUBJECT_COOKIE, type Person } from "@/lib/people";
+import { isPerson, PERSON_COLORS, SUBJECT_COOKIE, type Person } from "@/lib/people";
 import { cn } from "@/lib/utils";
 
 // 전역 인물 선택기. 쿠키에 저장하고 새로고침 → 서버 컴포넌트가 읽어 반영.
@@ -16,12 +17,43 @@ const SHORT: Record<string, string> = {
   최진희: "진희",
 };
 
+// 쿠키에서 현재 선택된 인물을 읽음. Next.js Router Cache 가 이전 페이지의
+// 렌더 상태를 잠깐 보여주는 바람에 PersonSwitcher 가 깜빡거리는 걸 막기 위해
+// 클라이언트에서 쿠키를 직접 재확인 → self-correct.
+function readCookieSubject(): Person | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${SUBJECT_COOKIE}=([^;]+)`),
+  );
+  if (!match) return null;
+  try {
+    const v = decodeURIComponent(match[1]);
+    return isPerson(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export function PersonSwitcher({ current }: { current: Person }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // 서버에서 받은 current 를 초기값으로, 클라이언트 마운트 후 쿠키로 자동
+  // 보정. 사용자가 pick 하면 즉시 active 상태 갱신 + 쿠키 저장 + refresh.
+  const [active, setActive] = useState<Person>(current);
+
+  useEffect(() => {
+    const fromCookie = readCookieSubject();
+    if (fromCookie && fromCookie !== active) {
+      setActive(fromCookie);
+    }
+    // current prop 이 바뀌면 (router.refresh 결과) 거기에도 맞춤.
+    // readCookieSubject 가 null 이면 current 를 신뢰.
+    // deps 에 current 포함 — SSR 재렌더 후에도 sync.
+  }, [current, active]);
 
   function pick(p: Person) {
     document.cookie = `${SUBJECT_COOKIE}=${encodeURIComponent(p)}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    setActive(p);
     startTransition(() => router.refresh());
   }
 
@@ -32,22 +64,22 @@ export function PersonSwitcher({ current }: { current: Person }) {
         pending && "opacity-60",
       )}
       role="tablist"
-      aria-label="보는 사람 선택"
+      aria-label="대상 선택"
     >
       <span className="text-[11px] text-muted-foreground">대상</span>
       {SELECTABLE.map((p) => {
-        const active = current === p;
+        const isActive = active === p;
         const colors = PERSON_COLORS[p];
         return (
           <button
             key={p}
             type="button"
             role="tab"
-            aria-selected={active}
+            aria-selected={isActive}
             onClick={() => pick(p)}
             className={cn(
               "inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-              active ? colors.pillActive : colors.pill,
+              isActive ? colors.pillActive : colors.pill,
             )}
           >
             {SHORT[p] ?? p}
