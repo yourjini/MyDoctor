@@ -11,6 +11,11 @@ import {
   writeJSON,
 } from "./github";
 import { CACHE_TAGS, CACHE_REVALIDATE_SECONDS } from "./cache-tags";
+import {
+  listViaManifest,
+  removeManifestItem,
+  upsertManifestItem,
+} from "./manifest";
 import type {
   Appointment,
   Attachment,
@@ -87,9 +92,11 @@ function yearOf(date: string): string {
 // Visits
 // ============================================================
 
+const walkVisits = (): Promise<Visit[]> => listAllJSON<Visit>("data/visits");
+
 export const listVisits = unstable_cache(
   async (): Promise<Visit[]> => {
-    const all = await listAllJSON<Visit>("data/visits");
+    const all = await listViaManifest<Visit>("visits", walkVisits);
     return all.sort((a, b) => b.date.localeCompare(a.date));
   },
   ["list-visits"],
@@ -146,6 +153,7 @@ export async function createVisit(
   } catch (err) {
     throw new Error(`방문 기록 저장 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("visits", visit, walkVisits);
   return visit;
 }
 
@@ -192,6 +200,7 @@ export async function updateVisit(
   } catch (err) {
     throw new Error(`방문 기록 수정 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("visits", next, walkVisits);
   return next;
 }
 
@@ -202,6 +211,7 @@ export async function deleteVisit(year: string, id: string): Promise<void> {
     if (a.type === "file") await deleteFile(a.path, `delete visit attachment ${id}`);
   }
   await deleteFile(visitFile(year, id), `delete visit ${id}`);
+  await removeManifestItem<Visit>("visits", id, walkVisits);
 }
 
 export async function removeVisitAttachment(
@@ -231,15 +241,22 @@ export async function removeVisitAttachment(
   } catch (err) {
     throw new Error(`방문 기록 갱신 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("visits", next, walkVisits);
 }
 
 // ============================================================
 // Appointments
 // ============================================================
 
+const walkAppointments = (): Promise<Appointment[]> =>
+  listAllJSON<Appointment>("data/appointments");
+
 export const listAppointments = unstable_cache(
   async (): Promise<Appointment[]> => {
-    const all = await listAllJSON<Appointment>("data/appointments");
+    const all = await listViaManifest<Appointment>(
+      "appointments",
+      walkAppointments,
+    );
     return all.sort((a, b) => a.datetime.localeCompare(b.datetime));
   },
   ["list-appointments"],
@@ -267,6 +284,7 @@ export async function createAppointment(
     updatedAt: now,
   };
   await writeJSON(apptFile(year, id), appt, `add appointment ${input.datetime}`);
+  await upsertManifestItem("appointments", appt, walkAppointments);
   return appt;
 }
 
@@ -285,20 +303,25 @@ export async function updateAppointment(
     updatedAt: new Date().toISOString(),
   };
   await writeJSON(apptFile(year, id), next, `update appointment ${id}`);
+  await upsertManifestItem("appointments", next, walkAppointments);
   return next;
 }
 
 export async function deleteAppointment(year: string, id: string): Promise<void> {
   await deleteFile(apptFile(year, id), `delete appointment ${id}`);
+  await removeManifestItem<Appointment>("appointments", id, walkAppointments);
 }
 
 // ============================================================
 // Checkups
 // ============================================================
 
+const walkCheckups = (): Promise<Checkup[]> =>
+  listAllJSON<Checkup>("data/checkups");
+
 export const listCheckups = unstable_cache(
   async (): Promise<Checkup[]> => {
-    const all = await listAllJSON<Checkup>("data/checkups");
+    const all = await listViaManifest<Checkup>("checkups", walkCheckups);
     return all.sort((a, b) => b.date.localeCompare(a.date));
   },
   ["list-checkups"],
@@ -358,6 +381,7 @@ export async function createCheckup(
   } catch (err) {
     throw new Error(`검진 기록 저장 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("checkups", checkup, walkCheckups);
   return checkup;
 }
 
@@ -404,6 +428,7 @@ export async function updateCheckup(
   } catch (err) {
     throw new Error(`검진 기록 수정 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("checkups", next, walkCheckups);
   return next;
 }
 
@@ -413,6 +438,7 @@ export async function deleteCheckup(year: string, id: string): Promise<void> {
     if (a.type === "file") await deleteFile(a.path, `delete checkup attachment ${id}`);
   }
   await deleteFile(checkupFile(year, id), `delete checkup ${id}`);
+  await removeManifestItem<Checkup>("checkups", id, walkCheckups);
 }
 
 export async function removeCheckupAttachment(
@@ -442,15 +468,19 @@ export async function removeCheckupAttachment(
   } catch (err) {
     throw new Error(`검진 기록 갱신 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("checkups", next, walkCheckups);
 }
 
 // ============================================================
 // Health logs
 // ============================================================
 
+const walkHealthLogs = (): Promise<HealthLog[]> =>
+  listAllJSON<HealthLog>("data/health");
+
 export const listHealthLogs = unstable_cache(
   async (): Promise<HealthLog[]> => {
-    const all = await listAllJSON<HealthLog>("data/health");
+    const all = await listViaManifest<HealthLog>("health", walkHealthLogs);
     return all.sort((a, b) => {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
       const at = a.measuredAt ?? a.createdAt.slice(11, 16);
@@ -488,6 +518,7 @@ export async function createHealthLog(
   } catch (err) {
     throw new Error(`건강일지 저장 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("health", log, walkHealthLogs);
   return log;
 }
 
@@ -510,11 +541,13 @@ export async function updateHealthLog(
   } catch (err) {
     throw new Error(`건강일지 수정 실패: ${describeError(err)}`);
   }
+  await upsertManifestItem("health", next, walkHealthLogs);
   return next;
 }
 
 export async function deleteHealthLog(year: string, id: string): Promise<void> {
   await deleteFile(healthFile(year, id), `delete health log ${id}`);
+  await removeManifestItem<HealthLog>("health", id, walkHealthLogs);
 }
 
 // ============================================================

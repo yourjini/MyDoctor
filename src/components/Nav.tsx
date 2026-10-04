@@ -44,6 +44,7 @@ const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
     items: [
       { href: "/appointments", label: "예약", icon: IconCalendar },
       { href: "/checkups", label: "건강검진", icon: IconClipboard },
+      { href: "/attachments", label: "첨부 자료", icon: IconPaperclip },
     ],
   },
   {
@@ -496,6 +497,12 @@ function IconNote({ className }: { className?: string }) {
       <line x1="7" y1="13" x2="15" y2="13" />
       <line x1="7" y1="17" x2="13" y2="17" />
     </>,
+    className,
+  );
+}
+function IconPaperclip({ className }: { className?: string }) {
+  return svg(
+    <path d="M21 10l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.19 9.19a1 1 0 0 1-1.41-1.41l8.12-8.12" />,
     className,
   );
 }

@@ -155,10 +155,12 @@ function invalidatePathTag(path: string) {
 export async function listAllJSON<T>(prefix: string): Promise<T[]> {
   const out: T[] = [];
   await walk(prefix, async (file) => {
-    if (file.type === "file" && file.path.endsWith(".json")) {
-      const data = await readJSON<T>(file.path);
-      if (data) out.push(data);
-    }
+    if (file.type !== "file") return;
+    if (!file.path.endsWith(".json")) return;
+    // 매니페스트 파일 (_index.json) 은 레코드가 아니므로 건너뜀.
+    if (file.path.endsWith("/_index.json")) return;
+    const data = await readJSON<T>(file.path);
+    if (data) out.push(data);
   });
   return out;
 }
