@@ -136,7 +136,9 @@ export function Nav({
               src="/logo.png"
               alt=""
               aria-hidden
-              className="h-7 w-7 rounded"
+              width={25}
+              height={32}
+              className="h-8 w-auto"
             />
             MyDoctor
           </Link>
