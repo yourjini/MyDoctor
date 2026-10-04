@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Attachment } from "@/lib/types";
 
@@ -21,6 +21,13 @@ function fileUrl(a: Attachment, download = false): string {
 function isPdfAttachment(a: Attachment): boolean {
   return (
     a.contentType === "application/pdf" || /\.pdf$/i.test(a.filename)
+  );
+}
+
+function isAudioAttachment(a: Attachment): boolean {
+  return (
+    a.contentType.startsWith("audio/") ||
+    /\.(mp3|m4a|aac|wav|ogg|oga|webm|3gpp?|amr)$/i.test(a.filename)
   );
 }
 
@@ -87,6 +94,29 @@ export function AttachmentGallery({ attachments, itemAccessory }: Props) {
                   </div>
                   <div className="mt-1 truncate text-xs">{a.filename}</div>
                 </button>
+              ) : isAudioAttachment(a) ? (
+                <div>
+                  <div className="flex h-32 flex-col items-center justify-center gap-2 rounded bg-muted p-2 text-center">
+                    <div className="text-3xl">🎙️</div>
+                    <audio
+                      src={fileUrl(a)}
+                      controls
+                      preload="metadata"
+                      className="w-full max-w-full"
+                    />
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate">{a.filename}</span>
+                    <a
+                      href={fileUrl(a, true)}
+                      download={a.filename}
+                      className="shrink-0 text-muted-foreground underline-offset-2 hover:underline"
+                      aria-label={`${a.filename} 다운로드`}
+                    >
+                      ⬇︎
+                    </a>
+                  </div>
+                </div>
               ) : (
                 <a
                   href={fileUrl(a)}
@@ -220,10 +250,31 @@ function Lightbox({
   const a = images[index];
   const hasPrev = index > 0;
   const hasNext = index < images.length - 1;
+
+  // 모바일 스와이프: 가로 50px 이상, 세로 변위보다 큼 → 좌/우 전환.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  function handleTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }
+  function handleTouchEnd(e: React.TouchEvent) {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0 && hasNext) onNext();
+    else if (dx > 0 && hasPrev) onPrev();
+  }
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/85 p-2 sm:p-6"
       onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       <button
         type="button"

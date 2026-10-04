@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { SubjectSelect } from "@/components/SubjectSelect";
 import { FilePicker } from "@/components/FilePicker";
 import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
 import { AttachmentGallery } from "@/components/AttachmentGallery";
+import { useBlobUploadForm } from "@/lib/use-blob-form";
 import {
   removeVisitAttachmentAction,
   updateVisitAction,
@@ -20,25 +21,27 @@ export function VisitEditView({
   year: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const blob = useBlobUploadForm();
 
   function cancel() {
-    formRef.current?.reset();
+    blob.formRef.current?.reset();
+    blob.setFiles([]);
     setIsEditing(false);
   }
 
   return (
     <>
       <form
-        ref={formRef}
+        ref={blob.formRef}
         action={updateVisitAction}
-        encType="multipart/form-data"
+        onSubmit={blob.onSubmit}
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
         <input type="hidden" name="id" value={visit.id} />
         <input type="hidden" name="year" value={year} />
+        <input type="hidden" name="blob_urls" ref={blob.blobUrlsRef} defaultValue="" />
 
-        <fieldset disabled={!isEditing} className="space-y-4 disabled:opacity-90">
+        <fieldset disabled={!isEditing || blob.uploading} className="space-y-4 disabled:opacity-90">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="방문일">
               <input
@@ -106,23 +109,34 @@ export function VisitEditView({
 
           <div className={isEditing ? "" : "hidden"}>
             <label className="mb-1 block text-sm font-medium">
-              첨부파일 추가
+              첨부파일 추가 (이미지 / PDF / 녹음)
             </label>
-            <FilePicker name="files" />
+            <FilePicker
+              onChange={blob.setFiles}
+              disabled={blob.uploading}
+              accept="image/*,application/pdf,audio/*"
+            />
           </div>
         </fieldset>
+
+        {blob.progress && (
+          <p className="text-xs text-muted-foreground">{blob.progress}</p>
+        )}
+        {blob.error && <p className="text-sm text-destructive">{blob.error}</p>}
 
         <div className={isEditing ? "flex gap-2 pt-1" : "hidden"}>
           <button
             type="submit"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+            disabled={blob.uploading}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            저장
+            {blob.uploading ? "업로드 중…" : "저장"}
           </button>
           <button
             type="button"
             onClick={cancel}
-            className="rounded-md border bg-background px-4 py-2 text-sm hover:bg-accent"
+            disabled={blob.uploading}
+            className="rounded-md border bg-background px-4 py-2 text-sm hover:bg-accent disabled:opacity-60"
           >
             취소
           </button>

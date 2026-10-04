@@ -32,18 +32,26 @@ export async function GET(
     }
   } else {
     const ext = path.toLowerCase().split(".").pop() || "";
-    ct =
-      ext === "pdf"
-        ? "application/pdf"
-        : ext === "png"
-          ? "image/png"
-          : ext === "jpg" || ext === "jpeg"
-            ? "image/jpeg"
-            : ext === "gif"
-              ? "image/gif"
-              : ext === "webp"
-                ? "image/webp"
-                : "application/octet-stream";
+    const map: Record<string, string> = {
+      pdf: "application/pdf",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      webp: "image/webp",
+      // 오디오: 녹음기 앱이 뱉는 흔한 포맷
+      mp3: "audio/mpeg",
+      m4a: "audio/mp4",
+      aac: "audio/aac",
+      wav: "audio/wav",
+      ogg: "audio/ogg",
+      oga: "audio/ogg",
+      webm: "audio/webm",
+      "3gp": "audio/3gpp",
+      "3gpp": "audio/3gpp",
+      amr: "audio/amr",
+    };
+    ct = map[ext] ?? "application/octet-stream";
   }
 
   const url = new URL(_req.url);

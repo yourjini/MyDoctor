@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { del as deleteBlob, get as getBlob } from "@vercel/blob";
 import {
   createCheckup,
   deleteCheckup,
@@ -10,116 +9,8 @@ import {
   updateCheckup,
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
-import { heicToJpeg, isHeic, jpegFilenameFor } from "@/lib/images";
+import { cleanupBlobs, collectUploadedFiles } from "@/lib/upload-helpers";
 import type { Checkup } from "@/lib/types";
-
-type FileBuf = { filename: string; contentType: string; data: Buffer };
-
-type BlobRef = {
-  url: string;
-  filename: string;
-  contentType: string;
-  size: number;
-};
-
-// 업로드된 파일을 모음: (a) FormData에 직접 실린 작은 파일,
-// (b) blob_urls JSON으로 전달된 큰 파일 (Vercel Blob에 직접 올린 것).
-async function collectUploadedFiles(formData: FormData): Promise<{
-  files: FileBuf[];
-  blobUrlsToCleanup: string[];
-}> {
-  const out: FileBuf[] = [];
-  const blobUrlsToCleanup: string[] = [];
-
-  // (a) FormData 파일
-  const directFiles = formData.getAll("files") as File[];
-  for (const f of directFiles) {
-    if (!(f instanceof File) || f.size === 0) continue;
-    out.push(await convertFileBuf(f.name, f.type, Buffer.from(await f.arrayBuffer())));
-  }
-
-  // (b) Blob 업로드 메타
-  const blobUrlsRaw = String(formData.get("blob_urls") || "").trim();
-  if (blobUrlsRaw) {
-    let blobs: BlobRef[] = [];
-    try {
-      blobs = JSON.parse(blobUrlsRaw) as BlobRef[];
-    } catch {
-      throw new Error("blob_urls 파싱 실패");
-    }
-    for (const b of blobs) {
-      // URL이 우리 Vercel Blob 스토어에서 온 것인지 확인.
-      // *.public.blob.vercel-storage.com 또는 *.blob.vercel-storage.com 만 허용
-      if (typeof b?.url !== "string" || !isAllowedBlobUrl(b.url)) {
-        throw new Error("올바르지 않은 Blob URL");
-      }
-      const got = await getBlob(b.url, { access: "private" });
-      if (!got || got.statusCode !== 200) {
-        throw new Error(
-          `Blob 다운로드 실패 (${b.filename}): ${got?.statusCode ?? "not found"}`,
-        );
-      }
-      const buf = Buffer.from(await new Response(got.stream).arrayBuffer());
-      out.push(
-        await convertFileBuf(
-          b.filename,
-          b.contentType || "application/octet-stream",
-          buf,
-        ),
-      );
-      blobUrlsToCleanup.push(b.url);
-    }
-  }
-
-  return { files: out, blobUrlsToCleanup };
-}
-
-async function convertFileBuf(
-  filename: string,
-  contentType: string,
-  data: Buffer,
-): Promise<FileBuf> {
-  let buf = data;
-  let name = filename;
-  let ct = contentType || "application/octet-stream";
-  if (isHeic(name, ct)) {
-    try {
-      buf = await heicToJpeg(buf);
-      name = jpegFilenameFor(name);
-      ct = "image/jpeg";
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      throw new Error(`HEIC 변환 실패 (${filename}): ${msg}`);
-    }
-  }
-  return { filename: name, contentType: ct, data: buf };
-}
-
-function isAllowedBlobUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== "https:") return false;
-    // Vercel Blob 호스트는 *.blob.vercel-storage.com 형태로 끝남
-    return u.hostname.endsWith(".blob.vercel-storage.com");
-  } catch {
-    return false;
-  }
-}
-
-async function cleanupBlobs(urls: string[]): Promise<void> {
-  if (urls.length === 0) return;
-  // 실패해도 메인 흐름 막지 않음 — 다음 cron으로 정리하는 게 이상적이지만
-  // 일단은 log만 남김.
-  await Promise.all(
-    urls.map(async (url) => {
-      try {
-        await deleteBlob(url);
-      } catch (err) {
-        console.warn("blob cleanup failed", url, err);
-      }
-    }),
-  );
-}
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

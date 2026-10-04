@@ -9,33 +9,8 @@ import {
   updateVisit,
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
-import { heicToJpeg, isHeic, jpegFilenameFor } from "@/lib/images";
+import { cleanupBlobs, collectUploadedFiles } from "@/lib/upload-helpers";
 import type { Visit } from "@/lib/types";
-
-async function readUploadedFiles(
-  formData: FormData,
-): Promise<{ filename: string; contentType: string; data: Buffer }[]> {
-  const files = formData.getAll("files") as File[];
-  const out: { filename: string; contentType: string; data: Buffer }[] = [];
-  for (const f of files) {
-    if (!(f instanceof File) || f.size === 0) continue;
-    let buf: Buffer = Buffer.from(await f.arrayBuffer());
-    let filename = f.name;
-    let contentType = f.type || "application/octet-stream";
-    if (isHeic(filename, contentType)) {
-      try {
-        buf = await heicToJpeg(buf);
-        filename = jpegFilenameFor(filename);
-        contentType = "image/jpeg";
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`HEIC 변환 실패 (${f.name}): ${msg}`);
-      }
-    }
-    out.push({ filename, contentType, data: buf });
-  }
-  return out;
-}
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -52,11 +27,15 @@ export async function createVisitAction(formData: FormData) {
   if (!date || !hospitalName || !diagnosis) {
     throw new Error("날짜, 병원명, 병명은 필수입니다");
   }
-  if (!ISO_DATE_RE.test(date)) throw new Error("방문일 형식이 올바르지 않습니다 (YYYY-MM-DD)");
+  if (!ISO_DATE_RE.test(date)) {
+    throw new Error("방문일 형식이 올바르지 않습니다 (YYYY-MM-DD)");
+  }
 
-  const fileBufs = await readUploadedFiles(formData);
+  const { files: fileBufs, blobUrlsToCleanup } = await collectUploadedFiles(
+    formData,
+  );
 
-  const visit = await createVisit(
+  await createVisit(
     {
       date,
       subject,
@@ -69,6 +48,7 @@ export async function createVisitAction(formData: FormData) {
     },
     fileBufs,
   );
+  await cleanupBlobs(blobUrlsToCleanup);
 
   revalidatePath("/visits");
   revalidatePath("/");
@@ -94,9 +74,12 @@ export async function updateVisitAction(formData: FormData) {
     insuranceClaimed: formData.get("insuranceClaimed") === "on",
   };
 
-  const fileBufs = await readUploadedFiles(formData);
+  const { files: fileBufs, blobUrlsToCleanup } = await collectUploadedFiles(
+    formData,
+  );
 
   await updateVisit(year, id, patch, fileBufs);
+  await cleanupBlobs(blobUrlsToCleanup);
   revalidatePath(`/visits/${year}/${id}`);
   revalidatePath("/visits");
   revalidatePath("/");
