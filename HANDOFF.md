@@ -1,118 +1,108 @@
-# 작업 인수인계 (handoff)
+# HANDOFF — 터미널에서 작업 이어가기
 
-이 문서는 채팅 세션 떠난 뒤 터미널에서 이어 작업하기 위한 메모입니다.
+채팅 세션 떠난 뒤 터미널에서 이어 작업할 때 보는 메모.
+
+> 최근 갱신: 2026-10-04
 
 ## 현재 상태
 
-- **브랜치**: `claude/health-records-app-K1Mso`
-- **PR**: https://github.com/yourjini/MyDoctor/pull/1
-- **빌드**: 통과 (`npm run build` OK, `npx tsc --noEmit` clean)
-- **배포**: 아직 안 함 — Vercel에서 직접 해야 함
+- **브랜치**: `main` 과 `claude/health-records-app-K1Mso` 둘 다 `5d714ef` ("새 노트북 이전 전 로컬 작업 백업")
+- **원격**: 동기화 완료, unpushed 없음
+- **프로덕션**: https://mydoctor-omega.vercel.app (main push → Vercel 자동 배포)
+- **단계별 진행 요약**: [작업이력.md](./작업이력.md)
 
-## 만들어진 기능 (요약)
+## 알려진 이슈 (업데이트 예정)
 
-| 페이지 | 경로 | 비고 |
-|---|---|---|
-| 캘린더 대시보드 | `/` | 방문/예약 월간뷰, 다가오는 예약 + 최근 방문 |
-| 방문 이력 | `/visits`, `/visits/new`, `/visits/[year]/[id]` | 병원유형/이름/의사/병명/상세, 영수증 업로드, 실비청구 체크 |
-| 예약 | `/appointments`, `/appointments/new`, `/appointments/[year]/[id]` | 일시 + 주의사항 |
-| 건강검진 | `/checkups`, `/checkups/new`, `/checkups/[year]/[id]` | PDF/이미지 업로드 → Claude Opus 4.7 자동 요약 → 수정 + 의사소견 추가 |
-| 로그인 | `/login` | 단일 비밀번호, HMAC 쿠키 |
+### 성능 — 저장/조회 느림 ⚠️
 
-## 데이터 레포
+**원인**: `src/lib/github.ts` 의 `listAllJSON` 이 디렉토리 재귀하면서 파일 하나당 `getContent` 호출을 하는 N+1 패턴.
+`writeFile` 도 매번 SHA 조회 라운드트립 후 커밋.
 
-- **별도 레포**: `yourjini/MyDoctor_db` (private)
-- 코드에 기본값 박혀있음 (`src/lib/github.ts` `getRepo()`)
-- 다른 레포로 바꾸려면 `GITHUB_DATA_OWNER` / `GITHUB_DATA_REPO` / `GITHUB_DATA_BRANCH` 환경변수 등록
+대시보드/각 목록 페이지가 모든 레코드를 full-tree 로 긁어오므로, 레코드가 쌓일수록 선형적으로 느려짐.
+GitHub Contents API 는 인증 기준 5000/hr 제한도 있어서 과하게 쓰면 429 가능.
 
-데이터 구조:
-```
-data/
-  visits/<연도>/<uuid>.json
-  visits/<연도>/<uuid>-files/<파일명>
-  appointments/<연도>/<uuid>.json
-  checkups/<연도>/<uuid>.json
-  checkups/<연도>/<uuid>-files/<파일명>
-```
+**해결 후보 (가벼운 것부터)**:
+1. Next.js `unstable_cache` + 레코드 종류별 태그 revalidation — 코드 변경 최소, 재배포만.
+2. 각 레코드 종류별 `data/<kind>/_index.json` 매니페스트 유지 (리스트는 매니페스트만, 상세는 개별 파일) — 쓰기 1회 추가, 읽기 1회로 끝.
+3. GitHub Contents API → GitHub Git Trees API (한 번에 트리 전체 받아오기) — 네트워크 1회로 감소.
+4. 대안 스토리지 (Vercel Postgres / Turso) — 큰 리팩터, 지금 구조 바꿔야 함.
 
-## 배포: 터미널에서 이어할 일
+**추천 순서**: 2번부터. 1번은 보조.
 
-### 1. Vercel CLI 로그인 + 프로젝트 link
+### 디자인 — 메인 화면 지저분함
+
+전문 UX/디자인 리뷰 필요. 쿠팡 수준의 레이아웃 지저분함 지적이 있음.
+스크린샷·레퍼런스·우선순위 정해지면 재설계.
+
+## 로컬 개발
 
 ```bash
 cd ~/path/to/MyDoctor
 git fetch origin
-git checkout claude/health-records-app-K1Mso
+git checkout main   # 또는 claude/health-records-app-K1Mso
 
-npm i -g vercel        # 또는 npx vercel
-vercel login           # 브라우저로 인증
-vercel link            # MyDoctor 프로젝트 연결 (없으면 새로 만듦)
+npm install
+cp .env.example .env.local  # 아래 환경변수 참고 후 채우기
+npm run dev                 # http://localhost:3000
+npm run typecheck           # tsc --noEmit
+npm run build               # 배포 전 로컬 빌드 확인
 ```
 
-### 2. 환경변수 등록 (4개만 필수)
+## 환경변수 (필수 4개)
 
 ```bash
-# GitHub PAT — Contents: R/W on MyDoctor_db
-vercel env add GITHUB_TOKEN production
-vercel env add GITHUB_TOKEN preview
-vercel env add GITHUB_TOKEN development
-
-# Anthropic 키
-vercel env add ANTHROPIC_API_KEY production
-vercel env add ANTHROPIC_API_KEY preview
-
-# 로그인 비밀번호 (직접 정해서 입력)
-vercel env add APP_PASSWORD production
-vercel env add APP_PASSWORD preview
-
-# 세션 쿠키 서명용 — 아래 값 그대로 복붙해도 되고 새로 생성해도 됨
-# openssl rand -hex 32
-vercel env add AUTH_SECRET production
-vercel env add AUTH_SECRET preview
+GITHUB_TOKEN=ghp_...               # MyDoctor_db Contents: R/W PAT
+APP_PASSWORD=...                   # 메인 로그인
+AUTH_SECRET=...                    # 16자 이상 랜덤 (openssl rand -hex 32)
+DIARY_PASSWORD=...                 # /diary 2차 비번
+# BLOB_READ_WRITE_TOKEN=...        # 로컬에서 큰 파일 업로드 테스트할 때만
 ```
 
-**미리 생성해둔 AUTH_SECRET (그대로 사용 가능):**
-```
-0c114fa7899b054c88565bbcfcd8f7ddc573304206693e5b8ad10a303264a4b8
-```
+Vercel 배포는 Dashboard → Environment Variables 에서 등록. Blob 스토어는 Storage 탭에서 Create → Connect.
 
-### 3. 배포
+## 배포 (수동 트리거)
 
 ```bash
+# 보통은 main push 하면 Vercel 이 자동 배포
+git push origin main
+
+# Vercel CLI 쓰는 경우
 vercel --prod
 ```
 
-또는 그냥 `main`에 머지하면 Vercel이 자동 배포함.
-
-## GitHub PAT 만들기 (아직 안 했으면)
-
-1. https://github.com/settings/personal-access-tokens/new
-2. **Repository access** → Only select repositories → `MyDoctor_db`
-3. **Repository permissions** → Contents: **Read and write**
-4. **Generate token** → 한 번만 보여주는 토큰 즉시 복사해서 안전한 곳에 (Vercel env 입력용)
-
-## 로컬 개발 확인
+## 자주 쓰는 명령
 
 ```bash
-npm install
-cp .env.example .env.local
-# .env.local 채우기 (위 4개 변수)
-npm run dev
+git log --oneline -10                       # 최근 커밋 보기
+git diff main~1 main                        # 직전 배포 diff
+grep -rn "TODO\|FIXME" src/                 # 할일 찾기
+npx tsc --noEmit                            # 타입체크만
+npm run build 2>&1 | tail -30               # 빌드 로그 끝부분
 ```
 
-`http://localhost:3000` → 로그인 → 동작 확인.
+## 폴더 지도
 
-## 알려진 사항
+| 경로 | 역할 |
+|---|---|
+| `src/app/<kind>/page.tsx` | 목록 |
+| `src/app/<kind>/new/page.tsx` | 생성 폼 |
+| `src/app/<kind>/[year]/[id]/page.tsx` | 상세/수정 |
+| `src/app/<kind>/actions.ts` | Server Actions (create/update/delete) |
+| `src/app/api/file/[...path]/route.ts` | 인증 거친 첨부파일 스트리밍 |
+| `src/app/api/blob/upload/route.ts` | Vercel Blob 업로드 토큰 발급 |
+| `src/lib/github.ts` | Octokit 저수준 R/W |
+| `src/lib/store.ts` | 레코드 CRUD (github.ts 위) |
+| `src/lib/auth.ts` | HMAC 쿠키 (앱 + 다이어리) |
+| `src/lib/types.ts` | 모든 레코드 타입 |
+| `src/lib/people.ts` | 가족 구성원 상수 + 필터 |
+| `src/lib/kinds.ts` | 레코드 종류별 색상·라벨 |
 
-- 로그인 미들웨어는 Edge runtime, Web Crypto 사용 (`src/middleware.ts`, `src/lib/auth.ts`)
-- 첨부파일은 raw GitHub URL 노출 안 함 — 인증된 `/api/file/[...path]` 라우트로만 서빙
-- AI 추출은 `claude-opus-4-7` + adaptive thinking + structured JSON output (`src/lib/extract.ts`)
-- 첨부 업로드 size 한도: Server Actions 30MB (`next.config.ts`)
+## 다음에 손댈 때 체크리스트
 
-## 추가하면 좋을 것 (시간 날 때)
-
-- 약 복용 관리 (4번 자리에 들어갈 수 있는 후보)
-- 가족력
-- 검진 결과 시계열 그래프 (혈압, 콜레스테롤 등)
-- 알림 (다가오는 예약 24시간 전 등)
-- iOS PWA 설정 (홈화면 추가)
+- [ ] `.env.local` 있는지 (없으면 `.env.example` 복사)
+- [ ] `npm install` 최신 lockfile 반영
+- [ ] `npm run dev` 뜨는지 확인
+- [ ] 기능 추가 전 `작업이력.md` 끝에 새 단계 섹션 준비
+- [ ] 작업 끝나면 커밋 메시지 한국어 요약
+- [ ] main 에 push → Vercel 자동 배포 확인
+- [ ] 데이터 모델 변경이면 기존 JSON과의 호환 확인 (field optional 처리)
