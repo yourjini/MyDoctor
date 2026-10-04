@@ -53,7 +53,8 @@ export function DashboardView({
     return `이번 달 ${count}건`;
   }, [visibleEvents, todayKey]);
 
-  const showLanha = subject === "전체" || subject === "박란하";
+  // 전체 뷰에는 특정 인물 전용 카드를 안 띄움. 란하만 선택했을 때 노출.
+  const showLanha = subject === "박란하";
 
   return (
     <>
