@@ -1,4 +1,6 @@
 import { Octokit } from "@octokit/rest";
+import { revalidateTag } from "next/cache";
+import { pathToTag } from "./cache-tags";
 
 let _octokit: Octokit | null = null;
 
@@ -107,6 +109,7 @@ export async function writeFile(
     branch,
     sha: existing?.sha,
   });
+  invalidatePathTag(path);
 }
 
 export async function writeJSON(
@@ -129,6 +132,24 @@ export async function deleteFile(path: string, message: string): Promise<void> {
     sha: existing.sha,
     branch,
   });
+  invalidatePathTag(path);
+}
+
+// 쓰기/삭제 후 해당 레코드 종류의 캐시 태그를 무효화. list* 가 다음 호출때
+// GitHub API 를 다시 치도록. revalidateTag 는 server-only 라서 server
+// action/route 경로에서만 호출되어야 하는데, 이 모듈은 저장소 레이어 전용
+// 이므로 그 조건이 자연히 성립.
+function invalidatePathTag(path: string) {
+  const tag = pathToTag(path);
+  if (!tag) return;
+  try {
+    // Next 16: 두 번째 인자로 CacheLife 프로파일 또는 { expire } 필요.
+    // 즉시 만료시켜 다음 조회 때 바로 새 데이터를 받음.
+    revalidateTag(tag, { expire: 0 });
+  } catch {
+    // 매우 드문 경우 (예: build time 호출) 를 조용히 무시 — 다음 실제 요청
+    // 때 revalidate (60s TTL) 로 어차피 새 데이터가 들어옴.
+  }
 }
 
 export async function listAllJSON<T>(prefix: string): Promise<T[]> {

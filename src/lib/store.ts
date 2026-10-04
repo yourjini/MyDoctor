@@ -1,5 +1,6 @@
 // Higher-level store on top of github.ts: per-record CRUD
 
+import { unstable_cache } from "next/cache";
 import { v4 as uuid } from "uuid";
 import {
   deleteFile,
@@ -9,6 +10,7 @@ import {
   writeFile,
   writeJSON,
 } from "./github";
+import { CACHE_TAGS, CACHE_REVALIDATE_SECONDS } from "./cache-tags";
 import type {
   Appointment,
   Attachment,
@@ -85,10 +87,14 @@ function yearOf(date: string): string {
 // Visits
 // ============================================================
 
-export async function listVisits(): Promise<Visit[]> {
-  const all = await listAllJSON<Visit>("data/visits");
-  return all.sort((a, b) => b.date.localeCompare(a.date));
-}
+export const listVisits = unstable_cache(
+  async (): Promise<Visit[]> => {
+    const all = await listAllJSON<Visit>("data/visits");
+    return all.sort((a, b) => b.date.localeCompare(a.date));
+  },
+  ["list-visits"],
+  { tags: [CACHE_TAGS.visits], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getVisit(year: string, id: string): Promise<Visit | null> {
   return readJSON<Visit>(visitFile(year, id));
@@ -231,10 +237,14 @@ export async function removeVisitAttachment(
 // Appointments
 // ============================================================
 
-export async function listAppointments(): Promise<Appointment[]> {
-  const all = await listAllJSON<Appointment>("data/appointments");
-  return all.sort((a, b) => a.datetime.localeCompare(b.datetime));
-}
+export const listAppointments = unstable_cache(
+  async (): Promise<Appointment[]> => {
+    const all = await listAllJSON<Appointment>("data/appointments");
+    return all.sort((a, b) => a.datetime.localeCompare(b.datetime));
+  },
+  ["list-appointments"],
+  { tags: [CACHE_TAGS.appointments], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getAppointment(
   year: string,
@@ -286,10 +296,14 @@ export async function deleteAppointment(year: string, id: string): Promise<void>
 // Checkups
 // ============================================================
 
-export async function listCheckups(): Promise<Checkup[]> {
-  const all = await listAllJSON<Checkup>("data/checkups");
-  return all.sort((a, b) => b.date.localeCompare(a.date));
-}
+export const listCheckups = unstable_cache(
+  async (): Promise<Checkup[]> => {
+    const all = await listAllJSON<Checkup>("data/checkups");
+    return all.sort((a, b) => b.date.localeCompare(a.date));
+  },
+  ["list-checkups"],
+  { tags: [CACHE_TAGS.checkups], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getCheckup(
   year: string,
@@ -434,16 +448,20 @@ export async function removeCheckupAttachment(
 // Health logs
 // ============================================================
 
-export async function listHealthLogs(): Promise<HealthLog[]> {
-  const all = await listAllJSON<HealthLog>("data/health");
-  return all.sort((a, b) => {
-    if (a.date !== b.date) return b.date.localeCompare(a.date);
-    const at = a.measuredAt ?? a.createdAt.slice(11, 16);
-    const bt = b.measuredAt ?? b.createdAt.slice(11, 16);
-    if (at !== bt) return bt.localeCompare(at);
-    return b.createdAt.localeCompare(a.createdAt);
-  });
-}
+export const listHealthLogs = unstable_cache(
+  async (): Promise<HealthLog[]> => {
+    const all = await listAllJSON<HealthLog>("data/health");
+    return all.sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      const at = a.measuredAt ?? a.createdAt.slice(11, 16);
+      const bt = b.measuredAt ?? b.createdAt.slice(11, 16);
+      if (at !== bt) return bt.localeCompare(at);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+  },
+  ["list-health-logs"],
+  { tags: [CACHE_TAGS.health], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getHealthLog(
   year: string,
@@ -503,10 +521,14 @@ export async function deleteHealthLog(year: string, id: string): Promise<void> {
 // Menstrual cycles
 // ============================================================
 
-export async function listMenstrualCycles(): Promise<MenstrualCycle[]> {
-  const all = await listAllJSON<MenstrualCycle>("data/period");
-  return all.sort((a, b) => b.startDate.localeCompare(a.startDate));
-}
+export const listMenstrualCycles = unstable_cache(
+  async (): Promise<MenstrualCycle[]> => {
+    const all = await listAllJSON<MenstrualCycle>("data/period");
+    return all.sort((a, b) => b.startDate.localeCompare(a.startDate));
+  },
+  ["list-menstrual-cycles"],
+  { tags: [CACHE_TAGS.period], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getMenstrualCycle(
   year: string,
@@ -573,11 +595,13 @@ export async function deleteMenstrualCycle(
 // Person profiles
 // ============================================================
 
-export async function getProfile(
-  person: string,
-): Promise<PersonProfile | null> {
-  return readJSON<PersonProfile>(profileFile(person));
-}
+export const getProfile = unstable_cache(
+  async (person: string): Promise<PersonProfile | null> => {
+    return readJSON<PersonProfile>(profileFile(person));
+  },
+  ["get-profile"],
+  { tags: [CACHE_TAGS.profile], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function upsertProfile(
   person: string,
@@ -602,16 +626,20 @@ export async function upsertProfile(
 // Meals
 // ============================================================
 
-export async function listMeals(): Promise<Meal[]> {
-  const all = await listAllJSON<Meal>("data/meals");
-  return all.sort((a, b) => {
-    if (a.date !== b.date) return b.date.localeCompare(a.date);
-    const at = a.time ?? a.createdAt.slice(11, 16);
-    const bt = b.time ?? b.createdAt.slice(11, 16);
-    if (at !== bt) return bt.localeCompare(at);
-    return b.createdAt.localeCompare(a.createdAt);
-  });
-}
+export const listMeals = unstable_cache(
+  async (): Promise<Meal[]> => {
+    const all = await listAllJSON<Meal>("data/meals");
+    return all.sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      const at = a.time ?? a.createdAt.slice(11, 16);
+      const bt = b.time ?? b.createdAt.slice(11, 16);
+      if (at !== bt) return bt.localeCompare(at);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+  },
+  ["list-meals"],
+  { tags: [CACHE_TAGS.meals], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getMeal(
   year: string,
@@ -681,13 +709,17 @@ export async function deleteMeal(
 // Diary (private — locked by separate password)
 // ============================================================
 
-export async function listDiaryEntries(): Promise<DiaryEntry[]> {
-  const all = await listAllJSON<DiaryEntry>("data/diary");
-  return all.sort((a, b) => {
-    if (a.date !== b.date) return b.date.localeCompare(a.date);
-    return b.createdAt.localeCompare(a.createdAt);
-  });
-}
+export const listDiaryEntries = unstable_cache(
+  async (): Promise<DiaryEntry[]> => {
+    const all = await listAllJSON<DiaryEntry>("data/diary");
+    return all.sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+  },
+  ["list-diary-entries"],
+  { tags: [CACHE_TAGS.diary], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getDiaryEntry(
   year: string,
@@ -756,15 +788,19 @@ const SEVERITY_ORDER: Record<string, number> = {
   caution: 2,
 };
 
-export async function listCautions(): Promise<CautionItem[]> {
-  const all = await listAllJSON<CautionItem>("data/cautions");
-  return all.sort((a, b) => {
-    const sa = SEVERITY_ORDER[a.severity] ?? 99;
-    const sb = SEVERITY_ORDER[b.severity] ?? 99;
-    if (sa !== sb) return sa - sb;
-    return a.name.localeCompare(b.name, "ko");
-  });
-}
+export const listCautions = unstable_cache(
+  async (): Promise<CautionItem[]> => {
+    const all = await listAllJSON<CautionItem>("data/cautions");
+    return all.sort((a, b) => {
+      const sa = SEVERITY_ORDER[a.severity] ?? 99;
+      const sb = SEVERITY_ORDER[b.severity] ?? 99;
+      if (sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name, "ko");
+    });
+  },
+  ["list-cautions"],
+  { tags: [CACHE_TAGS.cautions], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getCaution(id: string): Promise<CautionItem | null> {
   return readJSON<CautionItem>(cautionFile(id));
@@ -819,14 +855,18 @@ export async function deleteCaution(id: string): Promise<void> {
 // Clinic notes (선생님에게 전달할 사항)
 // ============================================================
 
-export async function listClinicNotes(): Promise<ClinicNote[]> {
-  const all = await listAllJSON<ClinicNote>("data/notes");
-  return all.sort((a, b) => {
-    // pending 먼저, 그 다음 done. 같은 상태 안에서는 최신순.
-    if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
-    return b.updatedAt.localeCompare(a.updatedAt);
-  });
-}
+export const listClinicNotes = unstable_cache(
+  async (): Promise<ClinicNote[]> => {
+    const all = await listAllJSON<ClinicNote>("data/notes");
+    return all.sort((a, b) => {
+      // pending 먼저, 그 다음 done. 같은 상태 안에서는 최신순.
+      if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
+  },
+  ["list-clinic-notes"],
+  { tags: [CACHE_TAGS.notes], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getClinicNote(id: string): Promise<ClinicNote | null> {
   return readJSON<ClinicNote>(clinicNoteFile(id));
@@ -885,26 +925,34 @@ export async function deleteClinicNote(id: string): Promise<void> {
 // 부위별 질환 트래커 (건강일지) — HealthCondition + ConditionExam
 // ============================================================
 
-export async function listConditions(): Promise<HealthCondition[]> {
-  const all = await listAllJSON<HealthCondition>(conditionRoot);
-  // listAllJSON은 하위 exam 파일까지 가져오므로 kind로 분리.
-  return all.filter((c) => c.kind === "condition");
-}
+export const listConditions = unstable_cache(
+  async (): Promise<HealthCondition[]> => {
+    const all = await listAllJSON<HealthCondition>(conditionRoot);
+    // listAllJSON은 하위 exam 파일까지 가져오므로 kind로 분리.
+    return all.filter((c) => c.kind === "condition");
+  },
+  ["list-conditions"],
+  { tags: [CACHE_TAGS.conditions], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 // condition + exam을 한 번의 walk로 모두 읽어 분리 (목록 페이지의 N+1 방지).
-export async function listConditionRecords(): Promise<{
-  conditions: HealthCondition[];
-  exams: ConditionExam[];
-}> {
-  const all = await listAllJSON<HealthCondition | ConditionExam>(conditionRoot);
-  const conditions: HealthCondition[] = [];
-  const exams: ConditionExam[] = [];
-  for (const r of all) {
-    if (r.kind === "condition") conditions.push(r as HealthCondition);
-    else if (r.kind === "exam") exams.push(r as ConditionExam);
-  }
-  return { conditions, exams };
-}
+export const listConditionRecords = unstable_cache(
+  async (): Promise<{
+    conditions: HealthCondition[];
+    exams: ConditionExam[];
+  }> => {
+    const all = await listAllJSON<HealthCondition | ConditionExam>(conditionRoot);
+    const conditions: HealthCondition[] = [];
+    const exams: ConditionExam[] = [];
+    for (const r of all) {
+      if (r.kind === "condition") conditions.push(r as HealthCondition);
+      else if (r.kind === "exam") exams.push(r as ConditionExam);
+    }
+    return { conditions, exams };
+  },
+  ["list-condition-records"],
+  { tags: [CACHE_TAGS.conditions], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getCondition(
   id: string,
@@ -974,17 +1022,19 @@ export async function deleteCondition(id: string): Promise<void> {
   await deleteFile(conditionFile(id), `delete condition ${id}`);
 }
 
-export async function listExamsFor(
-  conditionId: string,
-): Promise<ConditionExam[]> {
-  const all = await listAllJSON<ConditionExam>(examDir(conditionId));
-  return all
-    .filter((e) => e.kind === "exam")
-    .sort((a, b) => {
-      if (a.date !== b.date) return b.date.localeCompare(a.date);
-      return b.createdAt.localeCompare(a.createdAt);
-    });
-}
+export const listExamsFor = unstable_cache(
+  async (conditionId: string): Promise<ConditionExam[]> => {
+    const all = await listAllJSON<ConditionExam>(examDir(conditionId));
+    return all
+      .filter((e) => e.kind === "exam")
+      .sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return b.createdAt.localeCompare(a.createdAt);
+      });
+  },
+  ["list-exams-for"],
+  { tags: [CACHE_TAGS.conditions], revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
 export async function getExam(
   conditionId: string,
