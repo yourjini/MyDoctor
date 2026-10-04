@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 
 // 전역 인물 선택기. 쿠키에 저장하고 새로고침 → 서버 컴포넌트가 읽어 반영.
 // "전체" 포함 — 홈 대시보드의 로컬 필터와 통합됐으므로 여기에만 존재.
-const SELECTABLE: Person[] = ["전체", "박범진", "박란하", "최진희"];
+// 순서: 전체 → 진희 → 란하 → 범진 (사용자 지정).
+const SELECTABLE: Person[] = ["전체", "최진희", "박란하", "박범진"];
 const SHORT: Record<string, string> = {
   전체: "전체",
   박범진: "범진",
@@ -33,7 +34,7 @@ export function PersonSwitcher({ current }: { current: Person }) {
       role="tablist"
       aria-label="보는 사람 선택"
     >
-      <span className="text-[11px] text-muted-foreground">보는 사람</span>
+      <span className="text-[11px] text-muted-foreground">대상</span>
       {SELECTABLE.map((p) => {
         const active = current === p;
         const colors = PERSON_COLORS[p];

@@ -19,7 +19,9 @@ export function KindChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border font-medium",
+        // shrink-0 + whitespace-nowrap: flex 부모 안에서 다른 요소가
+        // 넓어지면 칩이 쪼그라들어서 라벨이 세로로 깨지는 걸 막음.
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border font-medium",
         styles.chip,
         sizeClass,
         className,

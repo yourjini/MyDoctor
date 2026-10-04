@@ -10,7 +10,7 @@ export async function PageShell({
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const person = await currentSubject("박란하");
+  const person = await currentSubject();
   return (
     <>
       <Nav currentPerson={person} />

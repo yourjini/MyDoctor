@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ConditionsPage() {
   // 상단 전역 인물 선택기(쿠키)를 따라간다. 기본은 박란하.
-  const filter = await currentSubject("박란하");
+  const filter = await currentSubject();
 
   const { conditions, exams } = await listConditionRecords();
 

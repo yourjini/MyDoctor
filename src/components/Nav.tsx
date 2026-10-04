@@ -27,8 +27,8 @@ type LeafLink = {
 const PRIMARY: LeafLink[] = [
   { href: "/", label: "홈", icon: IconHome },
   { href: "/health", label: "리포트", icon: IconHeart },
-  { href: "/conditions", label: "건강자료", short: "자료", icon: IconPulse },
-  { href: "/visits", label: "방문이력", short: "방문", icon: IconStethoscope },
+  { href: "/conditions", label: "건강자료", icon: IconPulse },
+  { href: "/visits", label: "방문이력", icon: IconStethoscope },
 ];
 
 const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
