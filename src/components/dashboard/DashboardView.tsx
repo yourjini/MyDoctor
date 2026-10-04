@@ -34,6 +34,7 @@ export function DashboardView({
   calendarEvents,
   recentRecords,
   todayKey,
+  dateLabel,
 }: {
   subject: Person;
   snapshot: LanhaSnapshot | null;
@@ -41,6 +42,7 @@ export function DashboardView({
   calendarEvents: CalendarEvent[];
   recentRecords: RecentRecord[];
   todayKey: string;
+  dateLabel: string;
 }) {
   const visibleAppts = useMemo(
     () =>
@@ -74,6 +76,11 @@ export function DashboardView({
 
   return (
     <div className="space-y-5">
+      <div className="-mt-2 text-sm text-muted-foreground">
+        {dateLabel}
+        {subject !== "전체" && ` · ${personShort(subject)}`}
+      </div>
+
       {showLanha && snapshot && <LanhaTodayCard snap={snapshot} />}
 
       {visibleRecent.length > 0 && (
@@ -160,6 +167,15 @@ export function DashboardView({
       />
     </div>
   );
+}
+
+function personShort(p: Person): string {
+  const map: Record<string, string> = {
+    박범진: "범진",
+    박란하: "란하",
+    최진희: "진희",
+  };
+  return map[p] ?? p;
 }
 
 function formatKDateTime(iso: string): string {

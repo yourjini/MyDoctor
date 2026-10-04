@@ -15,7 +15,7 @@ import {
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
-import { todayKST } from "@/lib/utils";
+import { formatKoreanDate, todayKST } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,9 @@ export default async function HomePage({
       getProfile("박란하"),
     ]);
 
-  const todayKey = todayKST().key;
+  const today = todayKST();
+  const todayKey = today.key;
+  const dateLabel = formatKoreanDate(today.key);
 
   // 박란하 스냅샷 — 필터와 무관하게 계산. 클라이언트가 표시 여부 결정.
   const lanhaHealth = allHealth.filter(
@@ -158,6 +160,7 @@ export default async function HomePage({
         calendarEvents={calendarEvents}
         recentRecords={recentRecords}
         todayKey={todayKey}
+        dateLabel={dateLabel}
       />
     </PageShell>
   );
