@@ -134,10 +134,10 @@ export function Nav({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
-              alt="MyDoctor"
-              width={32}
+              alt="JINI"
+              width={40}
               height={40}
-              className="h-10 w-auto"
+              className="h-10 w-10"
             />
           </Link>
 
