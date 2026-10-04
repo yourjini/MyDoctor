@@ -44,6 +44,10 @@ next-env.d.ts
 *.jpeg
 *.gif
 !public/**/*.png
+# Next.js app-dir icon convention (favicon / apple-icon)
+!src/app/icon.png
+!src/app/apple-icon.png
+!src/app/*/icon.png
 !public/**/*.jpg
 !public/**/*.jpeg
 !public/**/*.gif

@@ -130,7 +130,14 @@ export function Nav({
       {/* ─── 상단 바 ────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="container-narrow flex items-center justify-between gap-2 py-3">
-          <Link href="/" className="text-lg font-semibold">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt=""
+              aria-hidden
+              className="h-7 w-7 rounded"
+            />
             MyDoctor
           </Link>
 
