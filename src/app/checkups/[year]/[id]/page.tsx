@@ -1,4 +1,5 @@
 import Link from "next/link";
+
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { KindChip } from "@/components/KindChip";
@@ -6,6 +7,10 @@ import { getCheckup } from "@/lib/store";
 import { deleteCheckupAction } from "../../actions";
 import { formatDate } from "@/lib/utils";
 import { CheckupEditView } from "./CheckupEditView";
+
+// 파일 N개 저장 시 Blob 다운로드 + GitHub 커밋 여러 번이 순차로 돌아
+// 10s 기본 limit 쉽게 넘어감. 60s 로 상향.
+export const maxDuration = 60;
 
 export const dynamic = "force-dynamic";
 

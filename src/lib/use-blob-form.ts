@@ -60,11 +60,28 @@ export function useBlobUploadForm() {
       setProgress("저장 중…");
       readyRef.current = true;
       formRef.current?.requestSubmit();
+
+      // Watchdog — 60초 안에 페이지 전환이 안 일어나면 (서버 액션 실패/
+      // 타임아웃/hang) 사용자가 영원히 "업로드 중" 상태로 멈추는 걸 막음.
+      // 성공 시 redirect() 로 페이지가 바뀌면 컴포넌트가 언마운트돼 이 타이머
+      // 는 실행되지 않음.
+      setTimeout(() => {
+        if (readyRef.current) {
+          // readyRef 가 아직 true 면 submit 가 끝났어야 할 상황인데 안 끝난 것
+          readyRef.current = false;
+          setUploading(false);
+          setProgress(null);
+          setError(
+            "저장 응답이 60초 안에 돌아오지 않았습니다. 네트워크/서버 상태 확인 후 다시 시도해주세요. (이미 저장됐을 수도 있으니 목록도 한번 봐주세요)",
+          );
+        }
+      }, 60000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "업로드 실패";
       setError(msg);
       setUploading(false);
       setProgress(null);
+      readyRef.current = false;
     }
   }
 
