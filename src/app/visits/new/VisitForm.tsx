@@ -8,12 +8,11 @@ import { createVisitAction } from "../actions";
 
 export function VisitForm({ initialDate }: { initialDate?: string } = {}) {
   const today = initialDate ?? new Date().toISOString().slice(0, 10);
-  const blob = useBlobUploadForm();
+  const blob = useBlobUploadForm(createVisitAction);
 
   return (
     <form
       ref={blob.formRef}
-      action={createVisitAction}
       onSubmit={blob.onSubmit}
       className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
     >

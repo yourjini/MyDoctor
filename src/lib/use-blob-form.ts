@@ -1,11 +1,18 @@
 "use client";
 
 // Blob 업로드 폼 공통 훅. CheckupForm / VisitForm / VisitEdit 등에서 같은
-// 2단계 submit 패턴 (파일 → Blob 업로드 → form 액션 재제출) 을 공유.
+// "파일 → Blob 업로드 → 서버 액션 호출" 패턴을 공유.
+//
+// 왜 form action 대신 직접 액션 호출?
+//   requestSubmit() 로 두 번째 submit 이벤트를 유발해 React 가 form action
+//   을 실행하도록 유도하던 이전 방식은, React 19 + Next.js 16 조합에서
+//   간헐적으로 두 번째 submit 이 서버 액션으로 이어지지 않는 문제를 유발.
+//   그래서 액션을 훅의 인자로 받아 FormData 를 직접 넘겨 호출.
+//   useTransition 으로 pending 상태를 React 가 추적, 에러도 try/catch.
 //
 // 사용:
-//   const blob = useBlobUploadForm();
-//   <form ref={blob.formRef} action={serverAction} onSubmit={blob.onSubmit}>
+//   const blob = useBlobUploadForm(createVisitAction);
+//   <form ref={blob.formRef} onSubmit={blob.onSubmit}>
 //     <input type="hidden" name="blob_urls" ref={blob.blobUrlsRef} />
 //     <FilePicker onChange={blob.setFiles} disabled={blob.uploading} />
 //     {blob.progress && <p>{blob.progress}</p>}
@@ -13,59 +20,30 @@
 //     <button disabled={blob.uploading}>저장</button>
 //   </form>
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useTransition } from "react";
 import { uploadFileToBlob, type UploadedBlob } from "./blob-upload";
 
-const WATCHDOG_MS = 60000;
-
-export function useBlobUploadForm() {
+export function useBlobUploadForm(
+  action: (formData: FormData) => void | Promise<void>,
+) {
   const formRef = useRef<HTMLFormElement>(null);
   const blobUrlsRef = useRef<HTMLInputElement>(null);
-  // "이번 submit 흐름 내에서 두 번째 submit event 를 그냥 통과시켜라" 플래그.
-  // 두 번째 onSubmit 에서 바로 false 로 리셋됨.
-  const readyRef = useRef(false);
-  // "서버 응답을 기다리는 중" 플래그 — watchdog 이 사용. uploading state 와
-  // 분리된 이유: setState 는 비동기라 setTimeout 콜백이 stale 값을 봄.
-  const waitingRef = useRef(false);
-  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 중복 submit 가드. actionPending 과 분리된 이유: Blob 업로드 중 (아직
+  // startTransition 진입 전) 에도 재submit 을 막아야 함.
+  const inFlightRef = useRef(false);
 
   const [files, setFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionPending, startTransition] = useTransition();
 
-  // 성공 시 redirect 로 unmount — watchdog 자동 정리.
-  useEffect(() => {
-    return () => {
-      if (watchdogRef.current) {
-        clearTimeout(watchdogRef.current);
-        watchdogRef.current = null;
-      }
-    };
-  }, []);
-
-  function resetWaiting() {
-    waitingRef.current = false;
-    if (watchdogRef.current) {
-      clearTimeout(watchdogRef.current);
-      watchdogRef.current = null;
-    }
-  }
+  const uploading = actionPending || progress !== null;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    if (readyRef.current) {
-      // Blob 업로드 끝나고 두 번째로 들어온 submit — 그대로 액션에 넘김.
-      // waitingRef 는 그대로 true 유지 (서버 응답 기다리는 중).
-      readyRef.current = false;
-      return;
-    }
     e.preventDefault();
-    if (waitingRef.current) return;
-
+    if (inFlightRef.current || actionPending) return;
+    inFlightRef.current = true;
     setError(null);
-    setUploading(true);
-    setProgress(null);
-    waitingRef.current = true;
 
     try {
       const blobs: UploadedBlob[] = [];
@@ -85,32 +63,44 @@ export function useBlobUploadForm() {
       if (blobUrlsRef.current) {
         blobUrlsRef.current.value = JSON.stringify(blobs);
       }
+
+      const form = formRef.current;
+      if (!form) throw new Error("폼을 찾을 수 없습니다");
+      // FormData 는 form 의 현재 DOM 상태를 스냅샷. blob_urls 는 바로 위에서
+      // 세팅했으므로 포함됨.
+      const fd = new FormData(form);
+
       setProgress("저장 중…");
-      readyRef.current = true;
 
-      // Watchdog — 서버 액션이 60s 안에 응답 안 하면 (타임아웃/hang)
-      // "업로드 중" 상태를 풀고 에러 노출. 성공 (redirect) 시엔 컴포넌트가
-      // 언마운트되면서 useEffect cleanup 이 타이머를 지움.
-      watchdogRef.current = setTimeout(() => {
-        if (!waitingRef.current) return;
-        waitingRef.current = false;
-        watchdogRef.current = null;
-        setUploading(false);
-        setProgress(null);
-        setError(
-          "저장 응답이 60초 안에 돌아오지 않았습니다. 네트워크/서버 상태 확인 후 다시 시도해주세요. 이미 저장됐을 수도 있으니 목록도 한번 봐주세요.",
-        );
-      }, WATCHDOG_MS);
-
-      // 두 번째 submit 유발 — 브라우저가 네이티브 submit 로 진행
-      formRef.current?.requestSubmit();
+      startTransition(async () => {
+        try {
+          await action(fd);
+          // redirect() 하는 액션이면 여기 도달 전에 네비게이션 시작.
+          // 네비게이션 없이 끝난 경우를 위해 UI 초기화.
+          setProgress(null);
+          inFlightRef.current = false;
+        } catch (err) {
+          // Next.js 내부 redirect/notFound — 재throw 해서 Next 가 처리.
+          const digest = (err as { digest?: unknown } | null | undefined)
+            ?.digest;
+          if (
+            typeof digest === "string" &&
+            (digest.startsWith("NEXT_REDIRECT") ||
+              digest.startsWith("NEXT_NOT_FOUND"))
+          ) {
+            throw err;
+          }
+          const msg = err instanceof Error ? err.message : "저장 실패";
+          setError(msg);
+          setProgress(null);
+          inFlightRef.current = false;
+        }
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "업로드 실패";
       setError(msg);
-      setUploading(false);
       setProgress(null);
-      readyRef.current = false;
-      resetWaiting();
+      inFlightRef.current = false;
     }
   }
 

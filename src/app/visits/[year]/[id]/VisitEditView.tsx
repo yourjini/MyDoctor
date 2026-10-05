@@ -21,7 +21,7 @@ export function VisitEditView({
   year: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const blob = useBlobUploadForm();
+  const blob = useBlobUploadForm(updateVisitAction);
 
   function cancel() {
     blob.formRef.current?.reset();
@@ -33,7 +33,6 @@ export function VisitEditView({
     <>
       <form
         ref={blob.formRef}
-        action={updateVisitAction}
         onSubmit={blob.onSubmit}
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >

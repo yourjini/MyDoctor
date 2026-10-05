@@ -20,7 +20,7 @@ export function CheckupEditView({
   year: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const blob = useBlobUploadForm();
+  const blob = useBlobUploadForm(updateCheckupAction);
 
   function cancel() {
     blob.formRef.current?.reset();
@@ -32,7 +32,6 @@ export function CheckupEditView({
     <>
       <form
         ref={blob.formRef}
-        action={updateCheckupAction}
         onSubmit={blob.onSubmit}
         className="space-y-4 rounded-lg border bg-card p-4 sm:p-5"
       >
