@@ -4,13 +4,12 @@ import { HealthDataTabs } from "@/components/HealthDataTabs";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { KindChip } from "@/components/KindChip";
 import { distinctHospitalsOf, listAllAttachments } from "@/lib/attachments";
-import { asPerson, matchesFilter, PEOPLE } from "@/lib/people";
+import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = {
-  subject?: string;
   hospital?: string;
   year?: string;
 };
@@ -21,8 +20,8 @@ export default async function AttachmentsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
-  const subject =
-    sp.subject != null ? asPerson(sp.subject) : await currentSubject();
+  // 상단 전역 PersonSwitcher 쿠키 기반. 하단에선 더 이상 대상 셀렉트 없음.
+  const subject = await currentSubject();
   const hospital = (sp.hospital ?? "").trim();
   const year = (sp.year ?? "").trim();
 
@@ -56,21 +55,6 @@ export default async function AttachmentsPage({
         <h2 className="text-sm font-semibold">필터</h2>
 
         <form className="flex flex-wrap items-center gap-2" method="get">
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            대상자
-            <select
-              name="subject"
-              defaultValue={subject}
-              className="rounded-md border bg-background px-2 py-1.5 text-sm"
-            >
-              {PEOPLE.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             병원
             <select
@@ -109,7 +93,7 @@ export default async function AttachmentsPage({
           >
             적용
           </button>
-          {(hospital || year || subject !== "전체") && (
+          {(hospital || year) && (
             <Link
               href="/attachments"
               className="min-h-[36px] rounded-md px-3 text-sm text-muted-foreground hover:underline"
@@ -119,8 +103,12 @@ export default async function AttachmentsPage({
           )}
         </form>
 
-        <div className="text-xs text-muted-foreground">
-          총 {filtered.length} 개 · 전체 {everything.length} 개 중
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <SubjectBadge subject={subject} size="sm" showName />
+            <span>· 상단에서 사람 변경</span>
+          </div>
+          <span>총 {filtered.length} 개 · 전체 {everything.length} 개 중</span>
         </div>
       </section>
 
