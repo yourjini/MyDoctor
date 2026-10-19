@@ -26,7 +26,10 @@ export default async function HealthPage({
   // 디폴트는 "전체" — 다른 페이지와 일관성.
   const filter = asPerson(sp.subject);
   const query = (sp.q ?? "").trim().toLowerCase();
-  const range = sp.range ?? "30";
+  // 디폴트 "all" — "최근 30일" 로 좁히면 데이터 공백 기간엔 빈 화면이 나와
+  // 사용자가 "리포트 눌렀는데 아무것도 없다" 로 혼동. 범위는 명시적으로
+  // 좁힐 때만 적용.
+  const range = sp.range ?? "all";
 
   const all = await listHealthLogs();
 

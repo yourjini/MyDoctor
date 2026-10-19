@@ -1,7 +1,9 @@
 // Family members tracked across visits/appointments/checkups.
 // "전체" = applies to the whole family / unassigned.
 
-export const PEOPLE = ["전체", "박범진", "박란하", "최진희"] as const;
+// 순서 = 상단 PersonSwitcher 와 동일: 전체 → 최진희 → 박란하 → 박범진.
+// 아래쪽 SubjectFilter 와의 순서 불일치를 없애기 위해 통일.
+export const PEOPLE = ["전체", "최진희", "박란하", "박범진"] as const;
 export type Person = (typeof PEOPLE)[number];
 
 export const DEFAULT_PERSON: Person = "전체";
