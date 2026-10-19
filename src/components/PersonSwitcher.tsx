@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { isPerson, PERSON_COLORS, SUBJECT_COOKIE, type Person } from "@/lib/people";
+import { setSubjectAction } from "@/lib/subject-action";
 import { cn } from "@/lib/utils";
 
 // 전역 인물 선택기. 쿠키에 저장하고 새로고침 → 서버 컴포넌트가 읽어 반영.
@@ -51,9 +52,22 @@ export function PersonSwitcher({ current }: { current: Person }) {
   }, []);
 
   function pick(p: Person) {
-    document.cookie = `${SUBJECT_COOKIE}=${encodeURIComponent(p)}; path=/; max-age=${60 * 60 * 24 * 365}`;
+    // 즉시 UI 반영 — 사용자가 느리게 네트워크 왕복을 기다리지 않도록.
     setActive(p);
-    startTransition(() => router.refresh());
+    startTransition(async () => {
+      // Server action 이 쿠키 세팅 + revalidatePath("/", "layout") 로 모든
+      // 라우트의 캐시를 날림. 이걸 안 하면 Next.js Router Cache 가 각 탭의
+      // "이전 subject" 로 렌더된 결과를 재사용해 탭 전환마다 깜빡거린다.
+      // document.cookie 세팅은 fallback — 쿠키가 client 에서도 즉시 반영돼
+      // readCookieSubject() 가 다음 마운트 때 올바른 값을 읽음.
+      try {
+        document.cookie = `${SUBJECT_COOKIE}=${encodeURIComponent(p)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+      } catch {
+        // ignore
+      }
+      await setSubjectAction(p);
+      router.refresh();
+    });
   }
 
   return (
