@@ -270,6 +270,38 @@ export async function getAppointment(
   return readJSON<Appointment>(apptFile(year, id));
 }
 
+// 방문이력 폼에서 "연결된 예약" 셀렉트에 띄울 후보 목록.
+// - 아직 어떤 Visit 에도 연결되지 않은 예약
+// - 수정 중이면 현재 선택되어 있는 예약은 포함 (연결됐어도)
+// - 기준일이 있으면 그 날짜 ±60일 범위로 좁힘 (최근 수가 많으면 UI 폭주)
+export async function listLinkableAppointments(
+  aroundDate?: string,
+  includeId?: string,
+): Promise<Appointment[]> {
+  const [appts, visits] = await Promise.all([
+    listAppointments(),
+    listVisits(),
+  ]);
+  const linked = new Set(
+    visits.map((v) => v.appointmentId).filter((x): x is string => !!x),
+  );
+  if (includeId) linked.delete(includeId);
+
+  const DAY = 24 * 60 * 60 * 1000;
+  const base = aroundDate ? Date.parse(`${aroundDate}T00:00:00`) : null;
+  const WINDOW = 60 * DAY;
+
+  return appts
+    .filter((a) => !linked.has(a.id))
+    .filter((a) => {
+      if (base == null) return true;
+      const d = Date.parse(a.datetime);
+      if (Number.isNaN(d)) return true;
+      return Math.abs(d - base) <= WINDOW;
+    })
+    .sort((a, b) => b.datetime.localeCompare(a.datetime));
+}
+
 export async function createAppointment(
   input: Omit<Appointment, "id" | "kind" | "createdAt" | "updatedAt">,
 ): Promise<Appointment> {

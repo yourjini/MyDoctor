@@ -1,14 +1,59 @@
 "use client";
 
+import { useRef } from "react";
+import { AppointmentSelect } from "@/components/AppointmentSelect";
 import { FilePicker } from "@/components/FilePicker";
-import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
-import { SubjectSelect } from "@/components/SubjectSelect";
+import { PEOPLE, DEFAULT_PERSON } from "@/lib/people";
 import { useBlobUploadForm } from "@/lib/use-blob-form";
+import type { Appointment } from "@/lib/types";
 import { createVisitAction } from "../actions";
 
-export function VisitForm({ initialDate }: { initialDate?: string } = {}) {
+const HOSPITAL_TYPES = [
+  "내과",
+  "외과",
+  "산부인과",
+  "정형외과",
+  "피부과",
+  "안과",
+  "이비인후과",
+  "치과",
+  "정신건강의학과",
+  "비뇨기과",
+  "유방외과",
+  "흉부외과",
+  "한의원",
+  "기타",
+];
+
+export function VisitForm({
+  initialDate,
+  appointments,
+  initialAppointmentId,
+}: {
+  initialDate?: string;
+  appointments: Appointment[];
+  initialAppointmentId?: string;
+}) {
   const today = initialDate ?? new Date().toISOString().slice(0, 10);
   const blob = useBlobUploadForm(createVisitAction);
+
+  const dateRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLSelectElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const doctorRef = useRef<HTMLInputElement>(null);
+
+  // 예약 선택 시 폼의 날짜·대상자·병원 유형·병원명·의사를 자동 채움.
+  function handleApptPick(a: Appointment | null) {
+    if (!a) return;
+    if (dateRef.current) dateRef.current.value = a.datetime.slice(0, 10);
+    if (subjectRef.current && a.subject) subjectRef.current.value = a.subject;
+    if (typeRef.current && a.hospitalType)
+      typeRef.current.value = a.hospitalType;
+    if (nameRef.current) nameRef.current.value = a.hospitalName;
+    if (doctorRef.current && a.doctorName)
+      doctorRef.current.value = a.doctorName;
+  }
 
   return (
     <form
@@ -18,28 +63,69 @@ export function VisitForm({ initialDate }: { initialDate?: string } = {}) {
     >
       <input type="hidden" name="blob_urls" ref={blob.blobUrlsRef} defaultValue="" />
 
+      {appointments.length > 0 && (
+        <div className="rounded-md border border-dashed bg-muted/30 p-3">
+          <label className="mb-1 block text-sm font-medium">
+            연결된 예약 (선택)
+          </label>
+          <AppointmentSelect
+            appointments={appointments}
+            defaultValue={initialAppointmentId ?? ""}
+            onPick={handleApptPick}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            선택하면 예약 내용으로 아래 필드가 자동 채워집니다. 저장 후
+            캘린더에서 해당 예약은 숨겨져요.
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="방문일" required>
           <input
             type="date"
             name="date"
+            ref={dateRef}
             defaultValue={today}
             required
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
         <Field label="대상자" required>
-          <SubjectSelect />
+          <select
+            name="subject"
+            ref={subjectRef}
+            defaultValue={DEFAULT_PERSON}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            {PEOPLE.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
         </Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="병원 유형" required>
-          <HospitalTypeSelect />
+          <select
+            name="hospitalType"
+            ref={typeRef}
+            defaultValue="내과"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            {HOSPITAL_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="병원명" required>
           <input
             name="hospitalName"
+            ref={nameRef}
             required
             placeholder="○○병원"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -50,6 +136,7 @@ export function VisitForm({ initialDate }: { initialDate?: string } = {}) {
       <Field label="의사 이름 (선택)">
         <input
           name="doctorName"
+          ref={doctorRef}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
       </Field>

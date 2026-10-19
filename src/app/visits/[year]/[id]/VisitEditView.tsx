@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { AppointmentSelect } from "@/components/AppointmentSelect";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { SubjectSelect } from "@/components/SubjectSelect";
 import { FilePicker } from "@/components/FilePicker";
@@ -11,17 +12,31 @@ import {
   removeVisitAttachmentAction,
   updateVisitAction,
 } from "../../actions";
-import type { Visit } from "@/lib/types";
+import type { Appointment, Visit } from "@/lib/types";
 
 export function VisitEditView({
   visit,
   year,
+  appointments,
 }: {
   visit: Visit;
   year: string;
+  appointments: Appointment[];
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const blob = useBlobUploadForm(updateVisitAction);
+
+  const dateRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const doctorRef = useRef<HTMLInputElement>(null);
+
+  function handleApptPick(a: Appointment | null) {
+    if (!a) return;
+    if (dateRef.current) dateRef.current.value = a.datetime.slice(0, 10);
+    if (nameRef.current) nameRef.current.value = a.hospitalName;
+    if (doctorRef.current && a.doctorName)
+      doctorRef.current.value = a.doctorName;
+  }
 
   function cancel() {
     blob.formRef.current?.reset();
@@ -41,11 +56,28 @@ export function VisitEditView({
         <input type="hidden" name="blob_urls" ref={blob.blobUrlsRef} defaultValue="" />
 
         <fieldset disabled={!isEditing || blob.uploading} className="space-y-4 disabled:opacity-90">
+          {appointments.length > 0 && (
+            <div className="rounded-md border border-dashed bg-muted/30 p-3">
+              <label className="mb-1 block text-sm font-medium">
+                연결된 예약
+              </label>
+              <AppointmentSelect
+                appointments={appointments}
+                defaultValue={visit.appointmentId ?? ""}
+                onPick={handleApptPick}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                연결된 예약은 캘린더에서 숨겨집니다 (중복 표시 방지).
+              </p>
+            </div>
+          )}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="방문일">
               <input
                 type="date"
                 name="date"
+                ref={dateRef}
                 defaultValue={visit.date}
                 required
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
@@ -63,6 +95,7 @@ export function VisitEditView({
             <Field label="병원명">
               <input
                 name="hospitalName"
+                ref={nameRef}
                 defaultValue={visit.hospitalName}
                 required
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
@@ -73,6 +106,7 @@ export function VisitEditView({
           <Field label="의사 이름">
             <input
               name="doctorName"
+              ref={doctorRef}
               defaultValue={visit.doctorName ?? ""}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
             />

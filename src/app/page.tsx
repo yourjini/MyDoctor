@@ -70,9 +70,13 @@ export default async function HomePage({
         }
       : null;
 
-  // 다가오는 예약 — 미래 시점만, 전체 가족
+  // 다가오는 예약 — 미래 시점만, 전체 가족. 이미 방문으로 연결된 예약은 제외.
   const now = new Date();
+  const visitLinkedApptIds = new Set(
+    allVisits.map((v) => v.appointmentId).filter((x): x is string => !!x),
+  );
   const upcomingAppts: UpcomingAppointment[] = allAppts
+    .filter((a) => !visitLinkedApptIds.has(a.id))
     .filter((a) => new Date(a.datetime) >= now)
     .sort((a, b) => a.datetime.localeCompare(b.datetime))
     .slice(0, 20)
@@ -131,7 +135,8 @@ export default async function HomePage({
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 20);
 
-  // 캘린더 이벤트 (visits + appointments)
+  // 캘린더 이벤트 (visits + appointments). 어떤 visit 과 연결된 예약은
+  // 중복 표시 방지를 위해 캘린더에서 숨김 (visitLinkedApptIds 재사용).
   const calendarEvents: CalendarEvent[] = [
     ...allVisits.map((v) => ({
       id: v.id,
@@ -141,14 +146,16 @@ export default async function HomePage({
       subject: v.subject,
       href: `/visits/${v.date.slice(0, 4)}/${v.id}`,
     })),
-    ...allAppts.map((a) => ({
-      id: a.id,
-      date: a.datetime.slice(0, 10),
-      title: `${a.hospitalName}${a.reason ? ` · ${a.reason}` : ""}`,
-      type: "appointment" as const,
-      subject: a.subject,
-      href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
-    })),
+    ...allAppts
+      .filter((a) => !visitLinkedApptIds.has(a.id))
+      .map((a) => ({
+        id: a.id,
+        date: a.datetime.slice(0, 10),
+        title: `${a.hospitalName}${a.reason ? ` · ${a.reason}` : ""}`,
+        type: "appointment" as const,
+        subject: a.subject,
+        href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
+      })),
   ];
 
   return (

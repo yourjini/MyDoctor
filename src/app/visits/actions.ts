@@ -23,6 +23,8 @@ export async function createVisitAction(formData: FormData) {
   const diagnosis = String(formData.get("diagnosis") || "").trim();
   const details = String(formData.get("details") || "").trim() || undefined;
   const insuranceClaimed = formData.get("insuranceClaimed") === "on";
+  const appointmentId =
+    String(formData.get("appointmentId") || "").trim() || undefined;
 
   if (!date || !hospitalName || !diagnosis) {
     throw new Error("날짜, 병원명, 병명은 필수입니다");
@@ -45,12 +47,14 @@ export async function createVisitAction(formData: FormData) {
       diagnosis,
       details,
       insuranceClaimed,
+      appointmentId,
     },
     fileBufs,
   );
   await cleanupBlobs(blobUrlsToCleanup);
 
   revalidatePath("/visits");
+  revalidatePath("/appointments");
   revalidatePath("/");
   redirect("/visits");
 }
@@ -72,6 +76,8 @@ export async function updateVisitAction(formData: FormData) {
     diagnosis: String(formData.get("diagnosis") || "").trim(),
     details: String(formData.get("details") || "").trim() || undefined,
     insuranceClaimed: formData.get("insuranceClaimed") === "on",
+    appointmentId:
+      String(formData.get("appointmentId") || "").trim() || undefined,
   };
 
   const { files: fileBufs, blobUrlsToCleanup } = await collectUploadedFiles(
@@ -82,6 +88,7 @@ export async function updateVisitAction(formData: FormData) {
   await cleanupBlobs(blobUrlsToCleanup);
   revalidatePath(`/visits/${year}/${id}`);
   revalidatePath("/visits");
+  revalidatePath("/appointments");
   revalidatePath("/");
   redirect(`/visits/${year}/${id}`);
 }

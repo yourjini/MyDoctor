@@ -35,6 +35,9 @@ export type Visit = {
   details?: string;
   insuranceClaimed: boolean; // 실비보험 청구 여부
   attachments: Attachment[];
+  // 이 방문이 어떤 예약에 대한 진료였는지. 설정되면 캘린더에서 해당 예약은
+  // 숨겨짐 (중복 표시 방지). /appointments 목록에는 그대로 남음.
+  appointmentId?: string;
   createdAt: string;
   updatedAt: string;
 };

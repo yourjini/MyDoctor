@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { KindChip } from "@/components/KindChip";
-import { getVisit } from "@/lib/store";
+import { getVisit, listLinkableAppointments } from "@/lib/store";
 import { deleteVisitAction } from "../../actions";
 import { formatDate } from "@/lib/utils";
 import { VisitEditView } from "./VisitEditView";
@@ -22,6 +22,10 @@ export default async function VisitDetail({
   const { year, id } = await params;
   const visit = await getVisit(year, id);
   if (!visit) notFound();
+  const appointments = await listLinkableAppointments(
+    visit.date,
+    visit.appointmentId,
+  );
 
   return (
     <PageShell
@@ -39,7 +43,11 @@ export default async function VisitDetail({
         <KindChip kind="visit" />
       </div>
 
-      <VisitEditView visit={visit} year={year} />
+      <VisitEditView
+        visit={visit}
+        year={year}
+        appointments={appointments}
+      />
 
       <div className="mt-6 flex flex-col items-start justify-between gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center">
         <div>
