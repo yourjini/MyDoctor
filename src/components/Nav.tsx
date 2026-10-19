@@ -113,6 +113,11 @@ export function Nav({
     router.refresh();
   }
 
+  // 로그인 페이지에선 Nav 숨김 — root layout 이 모든 경로에 Nav 를 심지만
+  // /login 은 자체 full-screen UI 라서 Nav 가 거슬린다. (hook 전부 호출된
+  // 뒤에 early-return 해야 React Hook 규칙 지켜짐.)
+  if (pathname === "/login") return null;
+
   return (
     <>
       {/* 바깥 클릭용 백드롭. 토글 버튼/패널은 z-40 으로 이 위에 있어
