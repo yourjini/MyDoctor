@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { Person } from "@/lib/people";
 import { PersonSwitcher } from "./PersonSwitcher";
 
 // ----------------------------------------------------------------------
@@ -68,7 +69,7 @@ function activeHrefFor(pathname: string): string {
   return best;
 }
 
-export function Nav() {
+export function Nav({ currentPerson }: { currentPerson?: Person } = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -213,7 +214,7 @@ export function Nav() {
         {/* 전역 인물 선택 행 — 모바일·데스크탑 공통, 항상 보임 */}
         <div className="border-t bg-background/60">
           <div className="container-narrow flex items-center justify-center py-1.5 sm:justify-start">
-            <PersonSwitcher />
+            <PersonSwitcher current={currentPerson} />
           </div>
         </div>
 

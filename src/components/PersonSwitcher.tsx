@@ -6,15 +6,16 @@ import { isPerson, PERSON_COLORS, SUBJECT_COOKIE, type Person } from "@/lib/peop
 import { setSubjectAction } from "@/lib/subject-action";
 import { cn } from "@/lib/utils";
 
-// 전역 인물 선택기. 쿠키에 저장되고, 서버 컴포넌트는 쿠키를 읽어 그 사람의
-// 데이터로 필터링. 사용자가 pick 하면 server action 이 쿠키 세팅 +
-// revalidatePath("/", "layout") 으로 전체 route cache 를 날린 뒤 refresh.
+// 전역 인물 선택기. 쿠키에 저장되고 서버가 이를 읽어 데이터 필터링.
 //
-// 왜 current prop 안 받나?
-//   서버에서 current 를 받으면, 라우트 전환 시 서버가 다른 캐시된 current
-//   를 돌려주면 그 순간이 번쩍 보이는 깜빡임 발생. 그래서 PersonSwitcher
-//   는 서버 상태 무시, hydration 때 쿠키에서 직접 읽음. hydration 전엔
-//   플레이스홀더만 노출 → 라우트가 뭐든 보이는 상태가 100% 일관.
+// 두 가지 깜빡임 모두 방지:
+//  (a) 라우트 전환 때 Router Cache 가 돌려주는 current prop 변화에 반응
+//      금지 — useState 는 마운트 1회만 initial 값을 쓰므로 current prop
+//      이 변경돼도 state 는 유지됨. Nav 가 layout 에 있어 persistent
+//      이므로 PersonSwitcher 는 unmount 안 됨 → state 영구 유지.
+//  (b) 첫 로드 때 서버 current prop 을 initial state 로 사용 → SSR
+//      결과가 바로 올바른 사람 하이라이트. hydration 시 쿠키 보정은
+//      initial 과 같은 값이라 변화 없음 (깜빡임 없음).
 const SELECTABLE: Person[] = ["전체", "최진희", "박란하", "박범진"];
 const SHORT: Record<string, string> = {
   전체: "전체",
@@ -37,16 +38,21 @@ function readCookieSubject(): Person | null {
   }
 }
 
-export function PersonSwitcher() {
+export function PersonSwitcher({ current }: { current?: Person } = {}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // null = hydration 전. 서버 render 는 null → 플레이스홀더만. hydrate
-  // 되자마자 쿠키에서 복원하므로 사람 사이 깜빡임 없음.
-  const [active, setActive] = useState<Person | null>(null);
+  // 서버 current (쿠키 값과 동일) 를 initial state 로. 라우트 전환 시
+  // Nav 가 persistent 라 remount 안 됨 → useState initial 은 1회만 쓰여
+  // 서버가 다른 current 를 보내도 state 는 유지됨.
+  const [active, setActive] = useState<Person>(current ?? "전체");
 
   useEffect(() => {
-    const fromCookie = readCookieSubject() ?? "전체";
-    setActive(fromCookie);
+    // 혹시 쿠키와 서버 current 가 어긋났을 때 (앱 외부에서 쿠키 변경 등)
+    // 마운트 때 한 번 보정. 보통은 같은 값이라 no-op.
+    const fromCookie = readCookieSubject();
+    if (fromCookie && fromCookie !== active) setActive(fromCookie);
+    // 마운트 1회만 — current prop 변경 무시해야 깜빡임 안 생김.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function pick(p: Person) {
@@ -60,27 +66,6 @@ export function PersonSwitcher() {
       await setSubjectAction(p);
       router.refresh();
     });
-  }
-
-  // Hydration 전 — 아무 사람도 하이라이트 안 함. 레이아웃만 유지.
-  if (active == null) {
-    return (
-      <div
-        className="flex items-center gap-1.5"
-        role="tablist"
-        aria-label="대상 선택"
-      >
-        <span className="text-[11px] text-muted-foreground">대상</span>
-        {SELECTABLE.map((p) => (
-          <span
-            key={p}
-            className="inline-flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground"
-          >
-            {SHORT[p] ?? p}
-          </span>
-        ))}
-      </div>
-    );
   }
 
   return (
