@@ -55,6 +55,19 @@ export function PersonSwitcher({ current }: { current?: Person } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 외부 (상단 로고 클릭 등) 에서 CustomEvent 로 subject 변경을 요청하면
+  // pick 과 동일한 흐름 (UI 반영 + 쿠키 + server action + refresh) 을 돈다.
+  useEffect(() => {
+    function onEvent(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (!isPerson(detail)) return;
+      pick(detail);
+    }
+    window.addEventListener("md:subject", onEvent);
+    return () => window.removeEventListener("md:subject", onEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function pick(p: Person) {
     setActive(p);
     startTransition(async () => {

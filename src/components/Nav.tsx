@@ -123,11 +123,24 @@ export function Nav({ currentPerson }: { currentPerson?: Person } = {}) {
       {/* ─── 상단 바 ────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="container-narrow flex items-center justify-between gap-2 py-3">
-          <Link href="/" aria-label="홈" className="inline-flex items-center">
+          <Link
+            href="/"
+            aria-label="홈"
+            className="inline-flex items-center"
+            onClick={() => {
+              // 로고 = 홈 = "전체" 리셋. PersonSwitcher 가 리슨해서 UI 즉시
+              // 업데이트. 쿠키/서버 반영은 PersonSwitcher 쪽 핸들러가 담당.
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("md:subject", { detail: "전체" }),
+                );
+              }
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
-              alt="JINI"
+              alt="MyDoctor"
               width={40}
               height={40}
               className="h-10 w-10"
