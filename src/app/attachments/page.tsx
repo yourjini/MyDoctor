@@ -103,12 +103,8 @@ export default async function AttachmentsPage({
           )}
         </form>
 
-        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <SubjectBadge subject={subject} size="sm" showName />
-            <span>· 상단에서 사람 변경</span>
-          </div>
-          <span>총 {filtered.length} 개 · 전체 {everything.length} 개 중</span>
+        <div className="text-xs text-muted-foreground">
+          총 {filtered.length} 개 · 전체 {everything.length} 개 중
         </div>
       </section>
 

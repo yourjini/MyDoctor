@@ -60,12 +60,6 @@ export default async function ConditionsPage() {
       }
     >
       <HealthDataTabs />
-      <div className="mb-4 flex items-center gap-2">
-        <SubjectBadge subject={filter} size="sm" showName />
-        <p className="text-sm text-muted-foreground">
-          님의 부위별 질환·검사 이력 (상단에서 사람 변경)
-        </p>
-      </div>
 
       {visible.length === 0 ? (
         <EmptyState showSeed={filter === "최진희"} />
@@ -126,7 +120,10 @@ function ConditionCard({
       )}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <span className="font-medium">{condition.bodyPart}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <SubjectBadge subject={condition.subject} size="sm" />
+          <span className="font-medium truncate">{condition.bodyPart}</span>
+        </div>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px]", meta.chip)}>
           {meta.label}
         </span>

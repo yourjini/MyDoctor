@@ -41,12 +41,6 @@ export default async function CheckupsPage() {
       }
     >
       <HealthDataTabs />
-      <div className="mb-4 flex items-center gap-2">
-        <SubjectBadge subject={filter} size="sm" showName />
-        <p className="text-sm text-muted-foreground">
-          님의 검진 기록 (상단에서 사람 변경)
-        </p>
-      </div>
 
       {all.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
