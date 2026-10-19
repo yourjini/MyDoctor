@@ -7,7 +7,6 @@ import { KindChip } from "@/components/KindChip";
 import { SubjectBadge } from "@/components/SubjectBadge";
 import { CollapsibleCalendar } from "./CollapsibleCalendar";
 import { LanhaTodayCard, type LanhaSnapshot } from "./LanhaTodayCard";
-import { QuickActions } from "./QuickActions";
 import { matchesFilter, type Person } from "@/lib/people";
 
 export type UpcomingAppointment = {
@@ -157,8 +156,6 @@ export function DashboardView({
           </ul>
         )}
       </section>
-
-      <QuickActions />
 
       <CollapsibleCalendar
         events={visibleEvents}

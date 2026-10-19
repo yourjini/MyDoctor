@@ -12,9 +12,8 @@ import { PersonSwitcher } from "./PersonSwitcher";
 // 시각만 다름: 모바일은 상단(로고+더보기) + 하단탭, 데스크탑은 상단바
 // (로고 + 1차 탭 + 더보기) 한 줄.
 //
-// 1차: 홈 · 리포트 · 건강자료 · 방문이력
-// 더보기: 리포트 보조 / 병원 진료 / 기타
-// (/checkups 는 "건강자료" 탭 안으로 흡수되므로 1차에서 제외)
+// 1차 (사용자 지정 순): 홈 · 예약 · 방문이력 · 리포트
+// 더보기: 건강자료 / 리포트 보조 / 기타
 // ----------------------------------------------------------------------
 
 type LeafLink = {
@@ -26,25 +25,24 @@ type LeafLink = {
 
 const PRIMARY: LeafLink[] = [
   { href: "/", label: "홈", icon: IconHome },
-  { href: "/health", label: "리포트", icon: IconHeart },
-  { href: "/conditions", label: "건강자료", icon: IconPulse },
+  { href: "/appointments", label: "예약", icon: IconCalendar },
   { href: "/visits", label: "방문이력", icon: IconStethoscope },
+  { href: "/health", label: "리포트", icon: IconHeart },
 ];
 
 const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
+  {
+    label: "건강자료",
+    items: [
+      { href: "/conditions", label: "질환 추적", icon: IconPulse },
+      // /checkups 와 /attachments 는 "질환 추적" 안의 공유 탭에서 접근
+    ],
+  },
   {
     label: "리포트 보조",
     items: [
       { href: "/health/chart", label: "그래프", icon: IconChart },
       { href: "/diary", label: "다이어리", icon: IconLock },
-    ],
-  },
-  {
-    label: "병원 진료",
-    items: [
-      { href: "/appointments", label: "예약", icon: IconCalendar },
-      // /checkups 와 /attachments 는 "건강자료" 1차 탭 안에서 접근
-      // (/conditions · /checkups · /attachments 공유 탭 UI).
     ],
   },
   {

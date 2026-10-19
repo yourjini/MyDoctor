@@ -37,19 +37,18 @@ function readCookieSubject(): Person | null {
 export function PersonSwitcher({ current }: { current: Person }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // 서버에서 받은 current 를 초기값으로, 클라이언트 마운트 후 쿠키로 자동
-  // 보정. 사용자가 pick 하면 즉시 active 상태 갱신 + 쿠키 저장 + refresh.
+  // 서버에서 받은 current 를 initial HTML 용 초기값으로만 사용. hydration
+  // 후에는 "쿠키가 진실" — 라우트가 바뀌어 current prop 이 다른 값으로
+  // 넘어와도 쿠키 기반 state 를 유지. (이전엔 current 가 바뀔 때마다
+  // useEffect 가 재실행되어 /conditions ↔ /checkups 탭 전환 시 Router
+  // Cache 가 다른 current 를 돌려주면 란하 선택이 깜빡거렸음.)
   const [active, setActive] = useState<Person>(current);
 
   useEffect(() => {
     const fromCookie = readCookieSubject();
-    if (fromCookie && fromCookie !== active) {
-      setActive(fromCookie);
-    }
-    // current prop 이 바뀌면 (router.refresh 결과) 거기에도 맞춤.
-    // readCookieSubject 가 null 이면 current 를 신뢰.
-    // deps 에 current 포함 — SSR 재렌더 후에도 sync.
-  }, [current, active]);
+    if (fromCookie) setActive(fromCookie);
+    // 마운트 한 번만. current prop 변경은 무시 (쿠키 == state 가 유일한 진실).
+  }, []);
 
   function pick(p: Person) {
     document.cookie = `${SUBJECT_COOKIE}=${encodeURIComponent(p)}; path=/; max-age=${60 * 60 * 24 * 365}`;
