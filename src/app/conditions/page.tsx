@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { HealthDataTabs } from "@/components/HealthDataTabs";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
 import { listConditionRecords } from "@/lib/store";
@@ -120,10 +119,7 @@ function ConditionCard({
       )}
     >
       <div className="mb-1 flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <SubjectBadge subject={condition.subject} size="sm" />
-          <span className="font-medium truncate">{condition.bodyPart}</span>
-        </div>
+        <span className="font-medium truncate">{condition.bodyPart}</span>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px]", meta.chip)}>
           {meta.label}
         </span>
