@@ -56,12 +56,17 @@ export type Appointment = {
   updatedAt: string;
 };
 
+// 건강검진: 공단·회사 통한 연 1회 종합검진
+// 정기검진: 개인 병원에서 3~6개월마다 하는 추적 검사 (유방초음파·갑상선 등)
+export type CheckupCategory = "건강검진" | "정기검진";
+
 export type Checkup = {
   id: string;
   kind: "checkup";
   date: string; // YYYY-MM-DD (year extracted for grouping)
   subject?: string; // 대상자
   title: string; // e.g. "2026 종합건강검진"
+  category?: CheckupCategory; // 비어있으면 미지정 (레거시 레코드)
   hospitalName?: string;
   summary: string; // AI-generated or user-edited summary
   symptoms?: string; // 증상 / 소견

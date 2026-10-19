@@ -73,7 +73,23 @@ export default async function CheckupsPage({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="font-medium truncate">{c.title}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {c.category && (
+                                <span
+                                  className={cn(
+                                    "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                                    c.category === "건강검진"
+                                      ? "bg-indigo-500/10 text-indigo-700"
+                                      : "bg-emerald-500/10 text-emerald-700",
+                                  )}
+                                >
+                                  {c.category}
+                                </span>
+                              )}
+                              <span className="font-medium truncate">
+                                {c.title}
+                              </span>
+                            </div>
                             {c.hospitalName && (
                               <div className="text-xs text-muted-foreground">
                                 {c.hospitalName}

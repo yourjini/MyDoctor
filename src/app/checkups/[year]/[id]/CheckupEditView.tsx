@@ -60,14 +60,26 @@ export function CheckupEditView({
             </Field>
           </div>
 
-          <Field label="제목">
-            <input
-              name="title"
-              defaultValue={checkup.title}
-              required
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
-            />
-          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="종류">
+              <select
+                name="category"
+                defaultValue={checkup.category ?? "건강검진"}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
+              >
+                <option value="건강검진">건강검진 (연 1회 종합)</option>
+                <option value="정기검진">정기검진 (3·6개월 추적)</option>
+              </select>
+            </Field>
+            <Field label="제목">
+              <input
+                name="title"
+                defaultValue={checkup.title}
+                required
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:cursor-not-allowed"
+              />
+            </Field>
+          </div>
 
           <Field label="병원/검진센터">
             <input

@@ -10,14 +10,20 @@ import {
 } from "@/lib/store";
 import { asPerson } from "@/lib/people";
 import { cleanupBlobs, collectUploadedFiles } from "@/lib/upload-helpers";
-import type { Checkup } from "@/lib/types";
+import type { Checkup, CheckupCategory } from "@/lib/types";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function asCategory(v: FormDataEntryValue | null): CheckupCategory | undefined {
+  const s = String(v || "");
+  return s === "건강검진" || s === "정기검진" ? s : undefined;
+}
 
 export async function createCheckupAction(formData: FormData) {
   const date = String(formData.get("date") || "").trim();
   const subject = asPerson(formData.get("subject"));
   const title = String(formData.get("title") || "").trim();
+  const category = asCategory(formData.get("category"));
   const hospitalName = String(formData.get("hospitalName") || "").trim() || undefined;
   const summary = String(formData.get("summary") || "").trim();
   const symptoms = String(formData.get("symptoms") || "").trim() || undefined;
@@ -37,6 +43,7 @@ export async function createCheckupAction(formData: FormData) {
       date,
       subject,
       title,
+      category,
       hospitalName,
       summary,
       symptoms,
@@ -61,6 +68,7 @@ export async function updateCheckupAction(formData: FormData) {
     date,
     subject: asPerson(formData.get("subject")),
     title: String(formData.get("title") || "").trim(),
+    category: asCategory(formData.get("category")),
     hospitalName: String(formData.get("hospitalName") || "").trim() || undefined,
     summary: String(formData.get("summary") || "").trim(),
     symptoms: String(formData.get("symptoms") || "").trim() || undefined,

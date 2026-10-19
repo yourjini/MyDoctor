@@ -51,14 +51,26 @@ export function CheckupForm({ initialDate }: { initialDate?: string } = {}) {
         </Field>
       </div>
 
-      <Field label="제목" required>
-        <input
-          name="title"
-          required
-          placeholder="예: 2026 종합건강검진"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-        />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="종류">
+          <select
+            name="category"
+            defaultValue="건강검진"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            <option value="건강검진">건강검진 (연 1회 종합)</option>
+            <option value="정기검진">정기검진 (3·6개월 추적)</option>
+          </select>
+        </Field>
+        <Field label="제목" required>
+          <input
+            name="title"
+            required
+            placeholder="예: 2026 종합건강검진"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+        </Field>
+      </div>
 
       <Field label="병원/검진센터">
         <input
