@@ -1,21 +1,16 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { SubjectBadge } from "@/components/SubjectBadge";
-import { SubjectFilter } from "@/components/SubjectFilter";
 import { listVisits } from "@/lib/store";
-import { asPerson, matchesFilter } from "@/lib/people";
+import { matchesFilter } from "@/lib/people";
+import { currentSubject } from "@/lib/current-subject";
 import { KIND_STYLES } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function VisitsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ subject?: string }>;
-}) {
-  const sp = await searchParams;
-  const filter = asPerson(sp.subject);
+export default async function VisitsPage() {
+  const filter = await currentSubject();
   const all = await listVisits();
   const visits = all.filter((v) => matchesFilter(v.subject, filter));
 
@@ -43,10 +38,6 @@ export default async function VisitsPage({
         </Link>
       }
     >
-      <div className="mb-4">
-        <SubjectFilter />
-      </div>
-
       {visits.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           {all.length === 0

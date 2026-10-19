@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectFilter } from "@/components/SubjectFilter";
 import { SearchBar } from "@/components/SearchBar";
 import { listHealthLogs } from "@/lib/store";
-import { asPerson, matchesFilter } from "@/lib/people";
+import { matchesFilter } from "@/lib/people";
+import { currentSubject } from "@/lib/current-subject";
 import { KIND_STYLES } from "@/lib/kinds";
 import { cn } from "@/lib/utils";
 import type { HealthLog } from "@/lib/types";
@@ -20,11 +20,10 @@ const RANGE_OPTIONS = [
 export default async function HealthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ subject?: string; q?: string; range?: string }>;
+  searchParams: Promise<{ q?: string; range?: string }>;
 }) {
   const sp = await searchParams;
-  // 디폴트는 "전체" — 다른 페이지와 일관성.
-  const filter = asPerson(sp.subject);
+  const filter = await currentSubject();
   const query = (sp.q ?? "").trim().toLowerCase();
   // 디폴트 "all" — "최근 30일" 로 좁히면 데이터 공백 기간엔 빈 화면이 나와
   // 사용자가 "리포트 눌렀는데 아무것도 없다" 로 혼동. 범위는 명시적으로
@@ -76,10 +75,7 @@ export default async function HealthPage({
     >
       <div className="mb-3 space-y-2">
         <SearchBar placeholder="태그·메모 검색" />
-        <div className="flex flex-wrap items-center gap-3">
-          <SubjectFilter />
-          <RangeFilter current={range} />
-        </div>
+        <RangeFilter current={range} />
       </div>
 
       {all.length === 0 ? (

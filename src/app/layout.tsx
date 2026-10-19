@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Nav } from "@/components/Nav";
-import { currentSubject } from "@/lib/current-subject";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,20 +14,18 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Nav 를 레이아웃에 두면 라우트 전환 시 unmount 되지 않음. 그래야
-  // PersonSwitcher state 가 유지돼 /conditions ↔ /checkups 탭 전환 때
-  // 란하 선택이 깜빡이지 않는다.
-  // (Nav 는 /login 경로에서는 자체적으로 null 반환.)
-  const person = await currentSubject();
+  // Nav 는 persistent — 라우트 전환 시 unmount 안 됨. PersonSwitcher 는
+  // 자체적으로 쿠키 읽어 상태를 복원하므로 서버에서 current 를 넘길 필요
+  // 없음 (그걸 넘기면 라우트별 캐시 차이로 사람 레이블이 번쩍거렸음).
   return (
     <html lang="ko">
       <body>
-        <Nav currentPerson={person} />
+        <Nav />
         {children}
       </body>
     </html>

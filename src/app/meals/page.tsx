@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { SubjectBadge } from "@/components/SubjectBadge";
-import { SubjectFilter } from "@/components/SubjectFilter";
-import { asPerson, matchesFilter } from "@/lib/people";
+import { matchesFilter } from "@/lib/people";
+import { currentSubject } from "@/lib/current-subject";
 import { listMeals } from "@/lib/store";
 import type { Meal, MealSlot } from "@/lib/types";
 
@@ -22,13 +22,8 @@ const SLOT_ORDER: Record<MealSlot, number> = {
   snack: 3,
 };
 
-export default async function MealsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ subject?: string }>;
-}) {
-  const sp = await searchParams;
-  const filter = asPerson(sp.subject);
+export default async function MealsPage() {
+  const filter = await currentSubject();
 
   const all = await listMeals();
   const meals = all.filter((m) => matchesFilter(m.subject, filter));
@@ -54,10 +49,6 @@ export default async function MealsPage({
         </Link>
       }
     >
-      <div className="mb-3 space-y-2">
-        <SubjectFilter />
-      </div>
-
       {meals.length === 0 ? (
         <p className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           {all.length === 0

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { SubjectBadge } from "@/components/SubjectBadge";
-import { SubjectFilter } from "@/components/SubjectFilter";
-import { asPerson, matchesFilter } from "@/lib/people";
+import { matchesFilter } from "@/lib/people";
+import { currentSubject } from "@/lib/current-subject";
 import { listClinicNotes } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { ClinicNote } from "@/lib/types";
@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic";
 export default async function NotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ subject?: string; show?: string }>;
+  searchParams: Promise<{ show?: string }>;
 }) {
   const sp = await searchParams;
-  const filter = asPerson(sp.subject);
+  const filter = await currentSubject();
   const showDone = sp.show === "done";
 
   const all = await listClinicNotes();
@@ -40,8 +40,7 @@ export default async function NotesPage({
         다음 진료 때 의사 선생님께 전달하거나 여쭐 사항을 모아둡니다.
       </p>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <SubjectFilter />
+      <div className="mb-4 flex items-center justify-end">
         <ShowDoneToggle showDone={showDone} doneCount={done.length} />
       </div>
 
