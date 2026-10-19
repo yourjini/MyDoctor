@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { asPerson, PEOPLE, PERSON_COLORS, type Person } from "@/lib/people";
 import {
   ATTENDANCE_TAGS,
@@ -113,9 +112,8 @@ function LogRow({ log }: { log: HealthLog }) {
         href={`/health/${year}/${log.id}`}
         className="flex items-center gap-3 px-3 py-2.5 hover:bg-accent/40 sm:px-4"
       >
-        {/* 좌: 인물 점 + 날짜 */}
+        {/* 좌: 날짜 */}
         <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
-          <SubjectBadge subject={log.subject} size="sm" />
           <span className="font-mono text-[10px] text-muted-foreground">
             {log.date.slice(5)}
           </span>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { STATUS_LIST, STATUS_META } from "@/lib/health-conditions";
 import { cn } from "@/lib/utils";
 import type { ConditionExam, HealthCondition } from "@/lib/types";
@@ -54,7 +53,6 @@ export function ConditionDetailView({
       {/* 헤더 */}
       <article className="space-y-3 rounded-lg border bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <SubjectBadge subject={condition.subject} size="md" />
           <h1 className="text-xl font-semibold">{condition.bodyPart}</h1>
           <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", meta.chip)}>
             {meta.label}

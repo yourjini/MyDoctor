@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { listCautions } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { CautionItem, CautionSeverity } from "@/lib/types";
@@ -120,7 +119,6 @@ function CautionCard({ item }: { item: CautionItem }) {
       )}
     >
       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-        <SubjectBadge subject={item.subject} size="sm" />
         <span className="font-medium">{item.name}</span>
         {item.category && (
           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">

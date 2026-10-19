@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
 import { listClinicNotes } from "@/lib/store";
@@ -148,7 +147,6 @@ function NoteCard({ note }: { note: ClinicNote }) {
 
       <Link href={`/notes/${note.id}`} className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-1.5">
-          <SubjectBadge subject={note.subject} size="sm" />
           {note.hospitalType && (
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
               {note.hospitalType}

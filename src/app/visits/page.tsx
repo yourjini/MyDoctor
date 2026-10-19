@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { listVisits } from "@/lib/store";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
@@ -58,7 +57,6 @@ export default async function VisitsPage() {
                       href={`/visits/${y}/${v.id}`}
                       className="flex items-start justify-between gap-3 p-4 hover:bg-accent/40"
                     >
-                      <SubjectBadge subject={v.subject} size="md" className="mt-0.5" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 text-sm">
                           <span className="rounded bg-muted px-1.5 py-0.5 text-xs">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { CautionForm } from "../CautionForm";
 import { deleteCautionAction, updateCautionAction } from "../actions";
 import { cn } from "@/lib/utils";
@@ -44,7 +43,6 @@ export function CautionEditView({ item }: { item: CautionItem }) {
     <article className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <SubjectBadge subject={item.subject} size="md" />
           <h1 className="text-xl font-semibold">{item.name}</h1>
           <span
             className={cn(

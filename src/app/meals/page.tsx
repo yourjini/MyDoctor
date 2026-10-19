@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
 import { listMeals } from "@/lib/store";
@@ -77,11 +76,6 @@ export default async function MealsPage() {
                           href={`/meals/${year}/${month}/${m.id}`}
                           className="flex items-start gap-3 p-4 hover:bg-accent/40"
                         >
-                          <SubjectBadge
-                            subject={m.subject}
-                            size="md"
-                            className="mt-0.5"
-                          />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5 text-xs">
                               <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-900">

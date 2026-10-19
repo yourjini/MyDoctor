@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 import { HealthDataTabs } from "@/components/HealthDataTabs";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { KindChip } from "@/components/KindChip";
 import { distinctHospitalsOf, listAllAttachments } from "@/lib/attachments";
 import { matchesFilter } from "@/lib/people";
@@ -164,9 +163,6 @@ function AttachmentCardView({
               {isPdf ? "📄" : isAudio ? "🎙️" : "📎"}
             </div>
           )}
-          <div className="absolute left-1.5 top-1.5">
-            <SubjectBadge subject={it.subject} size="sm" />
-          </div>
           <div className="absolute right-1.5 top-1.5">
             <KindChip kind={recordKind} size="sm" />
           </div>

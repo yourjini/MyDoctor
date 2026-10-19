@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { listAppointments } from "@/lib/store";
 import { matchesFilter } from "@/lib/people";
 import { currentSubject } from "@/lib/current-subject";
@@ -79,7 +78,6 @@ function Section({
                 href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
                 className={`flex items-start justify-between gap-3 p-4 hover:bg-accent/40 ${muted ? "opacity-70" : ""}`}
               >
-                <SubjectBadge subject={a.subject} size="md" className="mt-0.5" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">
                     {a.hospitalName}

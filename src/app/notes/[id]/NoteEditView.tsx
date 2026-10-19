@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SubjectBadge } from "@/components/SubjectBadge";
 import { NoteForm } from "../NoteForm";
 import {
   deleteClinicNoteAction,
@@ -38,7 +37,6 @@ export function NoteEditView({ note }: { note: ClinicNote }) {
     <article className="space-y-4 rounded-lg border bg-card p-4 sm:p-5">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <SubjectBadge subject={note.subject} size="md" />
           {note.title && (
             <h1
               className={cn(
