@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn, todayKST } from "@/lib/utils";
 import { asPerson, PERSON_COLORS } from "@/lib/people";
-import { DayModal } from "./DayModal";
+import { CalendarAddModal } from "./CalendarAddModal";
 
 export type CalendarEvent = {
   id: string;
@@ -144,13 +144,13 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
             </span>
           </span>
           <span className="ml-auto hidden text-muted-foreground/70 sm:inline">
-            날짜를 탭하면 추가/수정 메뉴가 열립니다
+            날짜를 탭하면 등록 창이 열립니다
           </span>
         </div>
       </div>
 
       {selectedDate && (
-        <DayModal
+        <CalendarAddModal
           date={selectedDate}
           events={eventsByDate.get(selectedDate) ?? []}
           onClose={() => setSelectedDate(null)}
