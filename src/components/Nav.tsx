@@ -34,17 +34,18 @@ const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
     label: "리포트",
     items: [
       { href: "/health", label: "리포트", icon: IconHeart },
-      { href: "/health/chart", label: "그래프", icon: IconChart },
+      { href: "/health/chart", label: "조울모니터링", icon: IconChart },
       { href: "/diary", label: "다이어리", icon: IconLock },
     ],
   },
   {
     label: "기타",
     items: [
-      { href: "/meals", label: "식단", icon: IconUtensils },
-      { href: "/period", label: "생리주기", icon: IconDrop },
-      { href: "/cautions", label: "주의음식", icon: IconAlert },
-      { href: "/notes", label: "선생님메모", icon: IconNote },
+      // 사용자 요청으로 숨김 — 필요하면 다시 노출.
+      // { href: "/meals", label: "식단", icon: IconUtensils },
+      // { href: "/period", label: "생리주기", icon: IconDrop },
+      // { href: "/cautions", label: "주의음식", icon: IconAlert },
+      // { href: "/notes", label: "선생님메모", icon: IconNote },
       { href: "/profile", label: "프로필", icon: IconUser },
       { href: "/admin", label: "관리자", icon: IconGear },
     ],
