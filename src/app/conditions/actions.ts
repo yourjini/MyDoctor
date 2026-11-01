@@ -10,6 +10,7 @@ import {
   deleteCondition,
   deleteExam,
   getCondition,
+  getVisit,
   listConditions,
   updateCondition,
   updateExam,
@@ -191,4 +192,44 @@ export async function seedConditionsAction() {
   revalidatePath("/conditions");
   revalidatePath("/");
   redirect("/conditions");
+}
+
+// 방문이력 하나를 ConditionExam 레코드로 변환해 지정 condition 아래에 저장.
+// "건강추적 → 업데이트" 흐름에서 사용자가 체크한 방문들마다 호출.
+export async function importVisitAsExamAction(formData: FormData) {
+  const conditionId = String(formData.get("conditionId") || "");
+  const visitRefsRaw = String(formData.get("visitRefs") || "");
+  if (!conditionId || !visitRefsRaw) throw new Error("conditionId/visitRefs 누락");
+
+  const condition = await getCondition(conditionId);
+  if (!condition) throw new Error("건강추적 항목을 찾을 수 없습니다");
+
+  // visitRefs 포맷: "<year>:<id>,<year>:<id>,..."
+  const refs = visitRefsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  for (const ref of refs) {
+    const [year, visitId] = ref.split(":");
+    if (!year || !visitId) continue;
+    const visit = await getVisit(year, visitId);
+    if (!visit) continue;
+    const findings =
+      [visit.diagnosis, visit.details].filter((x) => !!x && String(x).trim())
+        .join("\n\n");
+    await createExam({
+      conditionId,
+      subject: condition.subject,
+      date: visit.date,
+      org: visit.hospitalName,
+      examType: visit.hospitalType,
+      findings,
+      sourceVisitId: visit.id,
+    });
+  }
+
+  revalidatePath(`/conditions/${conditionId}`);
+  revalidatePath("/conditions");
+  redirect(`/conditions/${conditionId}`);
 }

@@ -201,6 +201,9 @@ export type ConditionExam = {
   examType?: ExamType | string;
   findings: string; // 소견·결과 본문
   attachments?: Attachment[]; // 향후 확장용 (v1 미사용)
+  // "방문이력에서 가져오기" 로 자동 생성된 경우 원본 Visit.id. 같은 방문을
+  // 두 번 가져오지 못하도록 중복 방지에 사용.
+  sourceVisitId?: string;
   createdAt: string;
   updatedAt: string;
 };
