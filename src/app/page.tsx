@@ -1,15 +1,10 @@
 import { PageShell } from "@/components/PageShell";
 import { type CalendarEvent } from "@/components/Calendar";
-import {
-  DashboardView,
-  type RecentRecord,
-  type UpcomingAppointment,
-} from "@/components/dashboard/DashboardView";
+import { DashboardView } from "@/components/dashboard/DashboardView";
 import type { LanhaSnapshot } from "@/components/dashboard/LanhaTodayCard";
 import {
   getProfile,
   listAppointments,
-  listCheckups,
   listHealthLogs,
   listVisits,
 } from "@/lib/store";
@@ -29,14 +24,12 @@ export default async function HomePage({
   const subject =
     sp.subject != null ? asPerson(sp.subject) : await currentSubject();
 
-  const [allAppts, allHealth, allVisits, allCheckups, profile] =
-    await Promise.all([
-      listAppointments(),
-      listHealthLogs(),
-      listVisits(),
-      listCheckups(),
-      getProfile("박란하"),
-    ]);
+  const [allAppts, allHealth, allVisits, profile] = await Promise.all([
+    listAppointments(),
+    listHealthLogs(),
+    listVisits(),
+    getProfile("박란하"),
+  ]);
 
   const today = todayKST();
   const todayKey = today.key;
@@ -70,8 +63,7 @@ export default async function HomePage({
         }
       : null;
 
-  // 다가오는 예약 — 미래 시점만, 전체 가족. 완료·비방문·방문연결된 예약 제외.
-  const now = new Date();
+  // 캘린더용 — 방문으로 연결됐거나 완료·비방문된 예약은 제외.
   const visitLinkedApptIds = new Set(
     allVisits.map((v) => v.appointmentId).filter((x): x is string => !!x),
   );
@@ -81,67 +73,7 @@ export default async function HomePage({
       a.status !== "completed" &&
       a.status !== "missed",
   );
-  const upcomingAppts: UpcomingAppointment[] = activeAppts
-    .filter((a) => new Date(a.datetime) >= now)
-    .sort((a, b) => a.datetime.localeCompare(b.datetime))
-    .slice(0, 20)
-    .map((a) => ({
-      id: a.id,
-      datetime: a.datetime,
-      hospitalName: a.hospitalName,
-      reason: a.reason,
-      subject: a.subject,
-    }));
 
-  // "최근 등록" 섹션 — 모든 종류 섞어서 최신순 (createdAt 기준).
-  // page.tsx 에서 20건 추려서 넘기면 클라이언트가 subject 필터 후 3건만 렌더.
-  const recentRecords: RecentRecord[] = [
-    ...allVisits.map(
-      (v): RecentRecord => ({
-        id: v.id,
-        date: v.createdAt?.slice(0, 10) ?? v.date,
-        kind: "visit",
-        title: `${v.hospitalName} · ${v.diagnosis}`,
-        subject: v.subject,
-        href: `/visits/${v.date.slice(0, 4)}/${v.id}`,
-      }),
-    ),
-    ...allAppts.map(
-      (a): RecentRecord => ({
-        id: a.id,
-        date: a.createdAt?.slice(0, 10) ?? a.datetime.slice(0, 10),
-        kind: "appointment",
-        title: `${a.hospitalName}${a.reason ? ` · ${a.reason}` : ""}`,
-        subject: a.subject,
-        href: `/appointments/${a.datetime.slice(0, 4)}/${a.id}`,
-      }),
-    ),
-    ...allCheckups.map(
-      (c): RecentRecord => ({
-        id: c.id,
-        date: c.createdAt?.slice(0, 10) ?? c.date,
-        kind: "checkup",
-        title: c.title,
-        subject: c.subject,
-        href: `/checkups/${c.date.slice(0, 4)}/${c.id}`,
-      }),
-    ),
-    ...allHealth.map(
-      (h): RecentRecord => ({
-        id: h.id,
-        date: h.createdAt?.slice(0, 10) ?? h.date,
-        kind: "health",
-        title: `${h.date} 리포트`,
-        subject: h.subject,
-        href: `/health/${h.date.slice(0, 4)}/${h.id}`,
-      }),
-    ),
-  ]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 20);
-
-  // 캘린더 이벤트 (visits + appointments). 어떤 visit 과 연결된 예약은
-  // 중복 표시 방지를 위해 캘린더에서 숨김 (visitLinkedApptIds 재사용).
   const calendarEvents: CalendarEvent[] = [
     ...allVisits.map((v) => ({
       id: v.id,
@@ -166,9 +98,7 @@ export default async function HomePage({
       <DashboardView
         subject={subject}
         snapshot={snapshot}
-        upcomingAppts={upcomingAppts}
         calendarEvents={calendarEvents}
-        recentRecords={recentRecords}
         todayKey={todayKey}
         dateLabel={dateLabel}
       />
