@@ -118,10 +118,10 @@ export default async function AttachmentsPage({
               <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                 {ym.replace("-", "년 ")}월
               </h3>
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              <ul className="divide-y rounded-lg border bg-card">
                 {byMonth.get(ym)!.map((it) => (
                   <li key={`${it.recordId}-${it.attachment.path}`}>
-                    <AttachmentCardView it={it} />
+                    <AttachmentRowView it={it} />
                   </li>
                 ))}
               </ul>
@@ -133,54 +133,45 @@ export default async function AttachmentsPage({
   );
 }
 
-function AttachmentCardView({
+function AttachmentRowView({
   it,
 }: {
   it: Awaited<ReturnType<typeof listAllAttachments>>[number];
 }) {
   const { attachment: a, date, hospitalName, recordKind, sourceHref } = it;
-  const isImage = a.contentType.startsWith("image/");
   const isPdf =
     a.contentType === "application/pdf" || /\.pdf$/i.test(a.filename);
+  const isImage = a.contentType.startsWith("image/");
   const isAudio =
     a.contentType.startsWith("audio/") ||
     /\.(mp3|m4a|aac|wav|ogg|oga|webm|3gpp?|amr)$/i.test(a.filename);
-  const fileUrl = `/api/file/${a.path}?filename=${encodeURIComponent(a.filename)}`;
-
+  const icon = isPdf ? "📄" : isImage ? "🖼️" : isAudio ? "🎙️" : "📎";
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-card">
-      <Link href={sourceHref} className="block">
-        <div className="relative aspect-square bg-muted">
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt={a.filename}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-4xl">
-              {isPdf ? "📄" : isAudio ? "🎙️" : "📎"}
-            </div>
-          )}
-          <div className="absolute right-1.5 top-1.5">
-            <KindChip kind={recordKind} size="sm" />
-          </div>
-        </div>
-
-        <div className="space-y-0.5 p-2.5">
-          <div className="truncate text-xs text-muted-foreground">
-            {date}
-            {hospitalName ? ` · ${hospitalName}` : ""}
-          </div>
-          <div
-            className="truncate text-sm font-medium"
-            title={a.filename}
-          >
+    <Link
+      href={sourceHref}
+      className="flex items-center gap-3 p-3 hover:bg-accent/40 sm:p-4"
+    >
+      <span className="shrink-0 text-xl">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <KindChip kind={recordKind} size="sm" />
+          <span className="truncate text-sm font-medium" title={a.filename}>
             {a.filename}
-          </div>
+          </span>
         </div>
-      </Link>
-    </div>
+        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+          {date}
+          {hospitalName ? ` · ${hospitalName}` : ""}
+          {" · "}
+          {formatBytes(a.size)}
+        </div>
+      </div>
+    </Link>
   );
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n}B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)}KB`;
+  return `${(n / 1024 / 1024).toFixed(1)}MB`;
 }

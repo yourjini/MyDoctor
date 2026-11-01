@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // /conditions, /checkups, /attachments 세 라우트가 공유.
 
 const TABS = [
-  { href: "/conditions", label: "질환 추적" },
+  { href: "/conditions", label: "건강 추적" },
   { href: "/checkups", label: "검진 기록" },
   { href: "/attachments", label: "첨부 자료" },
 ] as const;

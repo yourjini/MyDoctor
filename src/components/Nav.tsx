@@ -26,15 +26,23 @@ type LeafLink = {
 const PRIMARY: LeafLink[] = [
   { href: "/appointments", label: "예약", icon: IconCalendar },
   { href: "/visits", label: "방문이력", icon: IconStethoscope },
-  { href: "/conditions", label: "질환추적", icon: IconPulse },
+  { href: "/conditions", label: "건강추적", icon: IconPulse },
 ];
 
 const SECONDARY_GROUPS: { label: string; items: LeafLink[] }[] = [
+  // "리포트" 그룹은 사용자 요청으로 메뉴에서 숨김 — 라우트는 그대로 살아있음.
+  // 다시 쓰고 싶으면 아래 블록 주석 해제.
+  // {
+  //   label: "리포트",
+  //   items: [
+  //     { href: "/health", label: "리포트", icon: IconHeart },
+  //     { href: "/health/chart", label: "조울모니터링", icon: IconChart },
+  //     { href: "/diary", label: "다이어리", icon: IconLock },
+  //   ],
+  // },
   {
-    label: "리포트",
+    label: "비공개",
     items: [
-      { href: "/health", label: "리포트", icon: IconHeart },
-      { href: "/health/chart", label: "조울모니터링", icon: IconChart },
       { href: "/diary", label: "다이어리", icon: IconLock },
     ],
   },
