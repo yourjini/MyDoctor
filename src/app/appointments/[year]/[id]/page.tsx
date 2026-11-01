@@ -5,6 +5,7 @@ import { KindChip } from "@/components/KindChip";
 import { getAppointment } from "@/lib/store";
 import { deleteAppointmentAction } from "../../actions";
 import { AppointmentEditView } from "./AppointmentEditView";
+import { StatusControl } from "./StatusControl";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ export default async function AppointmentDetail({
       <div className="mb-3">
         <KindChip kind="appointment" />
       </div>
+
+      <StatusControl appt={appt} year={year} />
 
       <AppointmentEditView appt={appt} year={year} />
 

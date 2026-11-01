@@ -72,26 +72,47 @@ function Section({
         </p>
       ) : (
         <ul className="rounded-lg border bg-card divide-y">
-          {items.map((a) => (
-            <li key={a.id}>
-              <Link
-                href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
-                className={`flex items-start justify-between gap-3 p-4 hover:bg-accent/40 ${muted ? "opacity-70" : ""}`}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">
-                    {a.hospitalName}
+          {items.map((a) => {
+            const st = a.status ?? "scheduled";
+            const badge =
+              st === "completed"
+                ? { label: "완료", cls: "bg-emerald-500/10 text-emerald-700" }
+                : st === "missed"
+                  ? { label: "비방문", cls: "bg-amber-500/10 text-amber-700" }
+                  : null;
+            return (
+              <li key={a.id}>
+                <Link
+                  href={`/appointments/${a.datetime.slice(0, 4)}/${a.id}`}
+                  className={`flex items-start justify-between gap-3 p-4 hover:bg-accent/40 ${muted || st !== "scheduled" ? "opacity-70" : ""}`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {badge && (
+                        <span
+                          className={cn(
+                            "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                            badge.cls,
+                          )}
+                        >
+                          {badge.label}
+                        </span>
+                      )}
+                      <span className="text-sm font-medium truncate">
+                        {a.hospitalName}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground truncate">
+                      {a.reason}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm text-muted-foreground truncate">
-                    {a.reason}
+                  <div className="ml-1 shrink-0 text-right text-sm">
+                    {formatKDT(a.datetime)}
                   </div>
-                </div>
-                <div className="ml-1 shrink-0 text-right text-sm">
-                  {formatKDT(a.datetime)}
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

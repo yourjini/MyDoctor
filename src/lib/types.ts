@@ -42,6 +42,11 @@ export type Visit = {
   updatedAt: string;
 };
 
+// scheduled: 아직 안 간 상태 (기본)
+// completed: 진료 완료 — Visit 생성됨, 캘린더에서 숨겨짐
+// missed: 비방문 처리 — 캘린더/다가오는 예약에서 숨겨짐, 레코드는 보존
+export type AppointmentStatus = "scheduled" | "completed" | "missed";
+
 export type Appointment = {
   id: string;
   kind: "appointment";
@@ -52,6 +57,8 @@ export type Appointment = {
   doctorName?: string;
   reason?: string;
   precautions?: string; // 주의사항
+  status?: AppointmentStatus; // 비어있으면 scheduled 로 취급 (레거시)
+  completedAt?: string; // ISO datetime, status=completed 일 때
   createdAt: string;
   updatedAt: string;
 };
