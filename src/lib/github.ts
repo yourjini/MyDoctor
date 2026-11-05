@@ -96,10 +96,22 @@ export async function writeFile(
   path: string,
   content: Buffer | string,
   message: string,
+  opts?: {
+    // Caller 가 이미 알고 있는 sha 전달 — writeFile 가 readFile 중복 호출을
+    // 안 함. 신규 파일은 "" 명시 전달 (undefined 면 조회함).
+    sha?: string | null;
+  },
 ): Promise<void> {
   const { owner, repo, branch } = getRepo();
   const buf = typeof content === "string" ? Buffer.from(content, "utf-8") : content;
-  const existing = await readFile(path);
+  let sha: string | undefined;
+  if (opts && "sha" in opts) {
+    // 명시: null 은 "신규 파일" 로 간주 → sha 안 넘김
+    sha = opts.sha === null ? undefined : opts.sha;
+  } else {
+    const existing = await readFile(path);
+    sha = existing?.sha;
+  }
   await getOctokit().repos.createOrUpdateFileContents({
     owner,
     repo,
@@ -107,7 +119,7 @@ export async function writeFile(
     message,
     content: buf.toString("base64"),
     branch,
-    sha: existing?.sha,
+    sha,
   });
   invalidatePathTag(path);
 }
@@ -116,8 +128,9 @@ export async function writeJSON(
   path: string,
   data: unknown,
   message: string,
+  opts?: { sha?: string | null },
 ): Promise<void> {
-  await writeFile(path, JSON.stringify(data, null, 2), message);
+  await writeFile(path, JSON.stringify(data, null, 2), message, opts);
 }
 
 export async function deleteFile(path: string, message: string): Promise<void> {
