@@ -16,6 +16,11 @@ import type { CalendarEvent } from "./Calendar";
 
 type Kind = "visit" | "appointment";
 
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function CalendarAddModal({
   date,
   events,
@@ -25,7 +30,9 @@ export function CalendarAddModal({
   events: CalendarEvent[];
   onClose: () => void;
 }) {
-  const [kind, setKind] = useState<Kind>("visit");
+  // 미래 날짜는 방문이력일 수 없음 → 기본을 예약으로 두고 방문 옵션 비활성.
+  const isFuture = date > todayKey();
+  const [kind, setKind] = useState<Kind>(isFuture ? "appointment" : "visit");
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -61,7 +68,9 @@ export function CalendarAddModal({
             className="min-h-11 flex-1 rounded-md border bg-background px-2.5 py-1.5 text-sm font-medium"
             aria-label="등록 종류"
           >
-            <option value="visit">방문이력</option>
+            <option value="visit" disabled={isFuture}>
+              방문이력{isFuture ? " (미래 날짜엔 등록 불가)" : ""}
+            </option>
             <option value="appointment">예약</option>
           </select>
           <button
