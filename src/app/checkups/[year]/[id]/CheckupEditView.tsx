@@ -8,6 +8,7 @@ import { AttachmentGallery } from "@/components/AttachmentGallery";
 import { useBlobUploadForm } from "@/lib/use-blob-form";
 import {
   removeCheckupAttachmentAction,
+  deleteCheckupAction,
   updateCheckupAction,
 } from "../../actions";
 import type { Checkup } from "@/lib/types";
@@ -164,7 +165,20 @@ export function CheckupEditView({
         </div>
       </form>
 
-      <div className={isEditing ? "hidden" : "pt-3"}>
+      <div className={isEditing ? "hidden" : "flex justify-end gap-2 pt-3"}>
+        <form action={deleteCheckupAction}>
+          <input type="hidden" name="id" value={checkup.id} />
+          <input type="hidden" name="year" value={year} />
+          <button
+            type="submit"
+            onClick={(e) => {
+              if (!confirm("이 검진 기록을 삭제할까요?")) e.preventDefault();
+            }}
+            className="rounded-md border border-destructive/40 bg-background px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+          >
+            삭제
+          </button>
+        </form>
         <button
           type="button"
           onClick={() => setIsEditing(true)}

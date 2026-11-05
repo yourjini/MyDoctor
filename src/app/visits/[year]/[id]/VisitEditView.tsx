@@ -9,9 +9,11 @@ import { AttachmentDeleteButton } from "@/components/AttachmentDeleteButton";
 import { AttachmentGallery } from "@/components/AttachmentGallery";
 import { useBlobUploadForm } from "@/lib/use-blob-form";
 import {
+  deleteVisitAction,
   removeVisitAttachmentAction,
   updateVisitAction,
 } from "../../actions";
+import { ConvertToAppointmentButton } from "./ConvertToAppointmentButton";
 import type { Appointment, Visit } from "@/lib/types";
 
 export function VisitEditView({
@@ -176,7 +178,25 @@ export function VisitEditView({
         </div>
       </form>
 
-      <div className={isEditing ? "hidden" : "pt-3"}>
+      <div className={isEditing ? "hidden" : "flex justify-end gap-2 pt-3"}>
+        <ConvertToAppointmentButton
+          visitId={visit.id}
+          year={year}
+          attachmentCount={visit.attachments.length}
+        />
+        <form action={deleteVisitAction}>
+          <input type="hidden" name="id" value={visit.id} />
+          <input type="hidden" name="year" value={year} />
+          <button
+            type="submit"
+            onClick={(e) => {
+              if (!confirm("이 방문이력을 삭제할까요?")) e.preventDefault();
+            }}
+            className="rounded-md border border-destructive/40 bg-background px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+          >
+            삭제
+          </button>
+        </form>
         <button
           type="button"
           onClick={() => setIsEditing(true)}

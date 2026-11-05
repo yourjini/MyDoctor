@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { KindChip } from "@/components/KindChip";
 import { getAppointment } from "@/lib/store";
-import { deleteAppointmentAction } from "../../actions";
 import { AppointmentEditView } from "./AppointmentEditView";
 import { StatusControl } from "./StatusControl";
 
@@ -37,19 +36,6 @@ export default async function AppointmentDetail({
       <StatusControl appt={appt} year={year} />
 
       <AppointmentEditView appt={appt} year={year} />
-
-      <div className="mt-6 flex items-center justify-end">
-        <form action={deleteAppointmentAction}>
-          <input type="hidden" name="id" value={appt.id} />
-          <input type="hidden" name="year" value={year} />
-          <button
-            type="submit"
-            className="inline-flex min-h-11 items-center px-2 text-xs text-destructive hover:underline"
-          >
-            삭제
-          </button>
-        </form>
-      </div>
     </PageShell>
   );
 }

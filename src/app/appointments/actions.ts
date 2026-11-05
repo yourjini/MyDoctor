@@ -46,7 +46,7 @@ export async function createAppointmentAction(formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect("/appointments");
+  redirect("/appointments?saved=1");
 }
 
 export async function updateAppointmentAction(formData: FormData) {
@@ -70,7 +70,7 @@ export async function updateAppointmentAction(formData: FormData) {
   revalidatePath(`/appointments/${year}/${id}`);
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/appointments/${year}/${id}`);
+  redirect(`/appointments/${year}/${id}?saved=1`);
 }
 
 // 예약 "방문완료" 처리 — Visit 를 자동 생성하고 appointmentId 로 연결,
@@ -120,7 +120,7 @@ export async function completeAppointmentAction(formData: FormData) {
   revalidatePath("/appointments");
   revalidatePath("/visits");
   revalidatePath("/");
-  redirect(`/visits/${visit.date.slice(0, 4)}/${visit.id}`);
+  redirect(`/visits/${visit.date.slice(0, 4)}/${visit.id}?saved=completed`);
 }
 
 // 예약 "비방문" 처리 — Appointment.status="missed" 로 바꾸고 레코드는 보존.
@@ -136,7 +136,7 @@ export async function missAppointmentAction(formData: FormData) {
   revalidatePath(`/appointments/${year}/${id}`);
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/appointments/${year}/${id}`);
+  redirect(`/appointments/${year}/${id}?saved=missed`);
 }
 
 // 상태 되돌리기 — 실수로 completed/missed 로 바꿨을 때. (completed 로
@@ -156,7 +156,7 @@ export async function reopenAppointmentAction(formData: FormData) {
   revalidatePath(`/appointments/${year}/${id}`);
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/appointments/${year}/${id}`);
+  redirect(`/appointments/${year}/${id}?saved=reopened`);
 }
 
 export async function deleteAppointmentAction(formData: FormData) {
@@ -167,5 +167,5 @@ export async function deleteAppointmentAction(formData: FormData) {
   await deleteAppointment(year, id);
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect("/appointments");
+  redirect("/appointments?saved=deleted");
 }

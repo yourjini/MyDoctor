@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Nav } from "@/components/Nav";
+import { SaveToast } from "@/components/SaveToast";
 import { currentSubject } from "@/lib/current-subject";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default async function RootLayout({
       <body>
         <Nav currentPerson={person} />
         {children}
+        <SaveToast />
       </body>
     </html>
   );

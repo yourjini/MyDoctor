@@ -3,7 +3,10 @@
 import { useRef, useState } from "react";
 import { HospitalTypeSelect } from "@/components/HospitalTypeSelect";
 import { SubjectSelect } from "@/components/SubjectSelect";
-import { updateAppointmentAction } from "../../actions";
+import {
+  deleteAppointmentAction,
+  updateAppointmentAction,
+} from "../../actions";
 import type { Appointment } from "@/lib/types";
 
 export function AppointmentEditView({
@@ -117,7 +120,20 @@ export function AppointmentEditView({
         </div>
       </form>
 
-      <div className={isEditing ? "hidden" : "pt-3"}>
+      <div className={isEditing ? "hidden" : "flex justify-end gap-2 pt-3"}>
+        <form action={deleteAppointmentAction}>
+          <input type="hidden" name="id" value={appt.id} />
+          <input type="hidden" name="year" value={year} />
+          <button
+            type="submit"
+            onClick={(e) => {
+              if (!confirm("이 예약을 삭제할까요?")) e.preventDefault();
+            }}
+            className="rounded-md border border-destructive/40 bg-background px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+          >
+            삭제
+          </button>
+        </form>
         <button
           type="button"
           onClick={() => setIsEditing(true)}

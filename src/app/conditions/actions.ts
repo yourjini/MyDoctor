@@ -47,7 +47,7 @@ export async function createConditionAction(formData: FormData) {
   });
 
   revalidatePath("/conditions");
-  redirect("/conditions");
+  redirect("/conditions?saved=1");
 }
 
 // 시드는 최진희 데이터이므로, 등록 후 전역 인물 컨텍스트를 최진희로 맞춰
@@ -84,7 +84,7 @@ export async function updateConditionAction(formData: FormData) {
   await updateCondition(id, patch);
   revalidatePath("/conditions");
   revalidatePath(`/conditions/${id}`);
-  redirect(`/conditions/${id}`);
+  redirect(`/conditions/${id}?saved=1`);
 }
 
 // 상세 페이지에서 상태만 빠르게 변경
@@ -101,7 +101,7 @@ export async function deleteConditionAction(formData: FormData) {
   if (!id) throw new Error("id 누락");
   await deleteCondition(id);
   revalidatePath("/conditions");
-  redirect("/conditions");
+  redirect("/conditions?saved=deleted");
 }
 
 // ---------- Exam CRUD ----------
@@ -134,7 +134,7 @@ export async function createExamAction(formData: FormData) {
 
   revalidatePath("/conditions");
   revalidatePath(`/conditions/${conditionId}`);
-  redirect(`/conditions/${conditionId}`);
+  redirect(`/conditions/${conditionId}?saved=1`);
 }
 
 export async function updateExamAction(formData: FormData) {
@@ -155,7 +155,7 @@ export async function updateExamAction(formData: FormData) {
   });
 
   revalidatePath(`/conditions/${conditionId}`);
-  redirect(`/conditions/${conditionId}`);
+  redirect(`/conditions/${conditionId}?saved=1`);
 }
 
 export async function deleteExamAction(formData: FormData) {
@@ -164,7 +164,7 @@ export async function deleteExamAction(formData: FormData) {
   if (!conditionId || !examId) throw new Error("id 누락");
   await deleteExam(conditionId, examId);
   revalidatePath(`/conditions/${conditionId}`);
-  redirect(`/conditions/${conditionId}`);
+  redirect(`/conditions/${conditionId}?saved=deleted`);
 }
 
 // ---------- Seed (최진희 실데이터 원클릭 등록) ----------
@@ -191,7 +191,7 @@ export async function seedConditionsAction() {
   await setSubjectCookie("최진희");
   revalidatePath("/conditions");
   revalidatePath("/");
-  redirect("/conditions");
+  redirect("/conditions?saved=1");
 }
 
 // 방문이력 하나를 ConditionExam 레코드로 변환해 지정 condition 아래에 저장.
@@ -231,5 +231,5 @@ export async function importVisitAsExamAction(formData: FormData) {
 
   revalidatePath(`/conditions/${conditionId}`);
   revalidatePath("/conditions");
-  redirect(`/conditions/${conditionId}`);
+  redirect(`/conditions/${conditionId}?saved=imported`);
 }

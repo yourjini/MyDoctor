@@ -54,7 +54,7 @@ export async function createCheckupAction(formData: FormData) {
   );
   await cleanupBlobs(blobUrlsToCleanup);
   revalidatePath("/checkups");
-  redirect("/checkups");
+  redirect("/checkups?saved=1");
 }
 
 export async function updateCheckupAction(formData: FormData) {
@@ -85,7 +85,7 @@ export async function updateCheckupAction(formData: FormData) {
   await cleanupBlobs(blobUrlsToCleanup);
   revalidatePath(`/checkups/${year}/${id}`);
   revalidatePath("/checkups");
-  redirect(`/checkups/${year}/${id}`);
+  redirect(`/checkups/${year}/${id}?saved=1`);
 }
 
 export async function deleteCheckupAction(formData: FormData) {
@@ -95,7 +95,7 @@ export async function deleteCheckupAction(formData: FormData) {
   if (!/^\d{4}$/.test(year)) throw new Error("year 형식 오류");
   await deleteCheckup(year, id);
   revalidatePath("/checkups");
-  redirect("/checkups");
+  redirect("/checkups?saved=deleted");
 }
 
 export async function removeCheckupAttachmentAction(formData: FormData) {
@@ -111,5 +111,5 @@ export async function removeCheckupAttachmentAction(formData: FormData) {
   }
   await removeCheckupAttachment(year, id, path);
   revalidatePath(`/checkups/${year}/${id}`);
-  redirect(`/checkups/${year}/${id}`);
+  redirect(`/checkups/${year}/${id}?saved=1`);
 }

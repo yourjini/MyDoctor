@@ -58,7 +58,7 @@ export async function createVisitAction(formData: FormData) {
   revalidatePath("/visits");
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect("/visits");
+  redirect("/visits?saved=1");
 }
 
 export async function updateVisitAction(formData: FormData) {
@@ -92,7 +92,7 @@ export async function updateVisitAction(formData: FormData) {
   revalidatePath("/visits");
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/visits/${year}/${id}`);
+  redirect(`/visits/${year}/${id}?saved=1`);
 }
 
 export async function deleteVisitAction(formData: FormData) {
@@ -103,7 +103,7 @@ export async function deleteVisitAction(formData: FormData) {
   await deleteVisit(year, id);
   revalidatePath("/visits");
   revalidatePath("/");
-  redirect("/visits");
+  redirect("/visits?saved=deleted");
 }
 
 export async function removeVisitAttachmentAction(formData: FormData) {
@@ -118,7 +118,7 @@ export async function removeVisitAttachmentAction(formData: FormData) {
   }
   await removeVisitAttachment(year, id, path);
   revalidatePath(`/visits/${year}/${id}`);
-  redirect(`/visits/${year}/${id}`);
+  redirect(`/visits/${year}/${id}?saved=1`);
 }
 
 // 방문이력 → 예약 전환. 미래 날짜인데 실수로 방문이력으로 저장한 경우.
@@ -157,5 +157,5 @@ export async function convertVisitToAppointmentAction(formData: FormData) {
   revalidatePath("/visits");
   revalidatePath("/appointments");
   revalidatePath("/");
-  redirect(`/appointments/${appt.datetime.slice(0, 4)}/${appt.id}`);
+  redirect(`/appointments/${appt.datetime.slice(0, 4)}/${appt.id}?saved=converted`);
 }
