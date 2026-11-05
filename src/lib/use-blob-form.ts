@@ -22,6 +22,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { uploadFileToBlob, type UploadedBlob } from "./blob-upload";
+import { compressImageIfNeeded } from "./image-compress";
 
 export function useBlobUploadForm(
   action: (formData: FormData) => void | Promise<void>,
@@ -46,20 +47,34 @@ export function useBlobUploadForm(
     setError(null);
 
     try {
-      const blobs: UploadedBlob[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        setProgress(
-          `${i + 1}/${files.length} ${f.name} 업로드 중… (${formatBytes(f.size)})`,
-        );
-        const b = await uploadFileToBlob(f, (loaded, total) => {
-          if (total) {
-            const pct = Math.round((loaded / total) * 100);
-            setProgress(`${i + 1}/${files.length} ${f.name} ${pct}%`);
-          }
-        });
-        blobs.push(b);
+      // 1) 압축: 이미지 리사이징 + JPEG 재인코딩. 큰 사진 (수 MB) → 보통
+      //    수백 KB 로 떨어져 업로드 자체가 몇 배 빨라짐.
+      let compressed: File[] = files;
+      if (files.length > 0) {
+        setProgress(`${files.length}개 파일 압축 중…`);
+        compressed = await Promise.all(files.map((f) => compressImageIfNeeded(f)));
+        const totalBefore = files.reduce((s, f) => s + f.size, 0);
+        const totalAfter = compressed.reduce((s, f) => s + f.size, 0);
+        if (totalAfter < totalBefore) {
+          const saved = Math.round(((totalBefore - totalAfter) / totalBefore) * 100);
+          setProgress(
+            `압축 ${formatBytes(totalBefore)} → ${formatBytes(totalAfter)} (-${saved}%) · 업로드 시작…`,
+          );
+        }
       }
+
+      // 2) 업로드: 파일들을 병렬로 Blob 에 올림. 순차 처리 대비 실제로는
+      //    네트워크 latency 를 숨겨 N배 빨라짐 (대역폭이 공유되긴 함).
+      let doneCount = 0;
+      const total = compressed.length;
+      const blobs: UploadedBlob[] = await Promise.all(
+        compressed.map(async (f) => {
+          const b = await uploadFileToBlob(f);
+          doneCount += 1;
+          setProgress(`${doneCount}/${total} 업로드 완료…`);
+          return b;
+        }),
+      );
       if (blobUrlsRef.current) {
         blobUrlsRef.current.value = JSON.stringify(blobs);
       }
