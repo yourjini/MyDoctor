@@ -26,21 +26,27 @@ function SaveToastInner() {
   const [show, setShow] = useState(false);
   const [msg, setMsg] = useState("저장되었습니다");
 
+  // 1) saved 쿼리가 있으면 메시지 세팅 + show=true + URL 에서 파라미터 제거.
+  //    router.replace 가 다시 렌더를 유발해 이 effect 가 재실행되면 cleanup
+  //    이 돌 수 있기 때문에 setTimeout 은 여기 두면 안 됨 (바로 clear 됨).
   useEffect(() => {
     if (!saved) return;
     setMsg(MESSAGES[saved] ?? "저장되었습니다");
     setShow(true);
-
-    // URL 에서 saved 파라미터만 깔끔히 제거
     const params = new URLSearchParams(sp.toString());
     params.delete("saved");
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-
-    const t = setTimeout(() => setShow(false), 2200);
-    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved]);
+
+  // 2) show=true 가 되면 2.2초 후 자동으로 사라지도록. 별도 effect 라서
+  //    위 effect 재실행의 cleanup 영향을 안 받음.
+  useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(() => setShow(false), 2200);
+    return () => clearTimeout(t);
+  }, [show]);
 
   if (!show) return null;
 
