@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { cn, todayKST } from "@/lib/utils";
 import { asPerson, PERSON_COLORS } from "@/lib/people";
@@ -81,12 +82,19 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
             const isToday = key === todayKey;
             const dayEvents = eventsByDate.get(key) ?? [];
             return (
-              <button
+              <div
                 key={idx}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedDate(key)}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter" || ev.key === " ") {
+                    ev.preventDefault();
+                    setSelectedDate(key);
+                  }
+                }}
                 className={cn(
-                  "group min-h-[56px] border-b border-r p-1 text-left text-[11px] transition-colors hover:bg-accent/40 focus:bg-accent/60 focus:outline-none sm:min-h-[80px] sm:p-1.5 sm:text-xs",
+                  "group flex min-h-[56px] cursor-pointer flex-col border-b border-r p-1 text-left text-[11px] transition-colors hover:bg-accent/40 focus:bg-accent/60 focus:outline-none sm:min-h-[80px] sm:p-1.5 sm:text-xs",
                   idx % 7 === 6 && "border-r-0",
                   !inMonth && "bg-muted/30 text-muted-foreground",
                 )}
@@ -102,10 +110,12 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
                 </div>
                 <div className="space-y-0.5">
                   {dayEvents.slice(0, 2).map((e) => (
-                    <div
+                    <Link
                       key={e.id}
+                      href={e.href}
+                      onClick={(ev) => ev.stopPropagation()}
                       className={cn(
-                        "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] leading-tight sm:text-[11px]",
+                        "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] leading-tight hover:brightness-95 sm:text-[11px]",
                         e.type === "visit"
                           ? "bg-emerald-100 text-emerald-900"
                           : "bg-amber-100 text-amber-900",
@@ -119,7 +129,7 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
                         )}
                       />
                       <span className="truncate">{e.title}</span>
-                    </div>
+                    </Link>
                   ))}
                   {dayEvents.length > 2 && (
                     <div className="text-[10px] text-muted-foreground">
@@ -127,7 +137,7 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
                     </div>
                   )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -144,7 +154,7 @@ export function Calendar({ events }: { events: CalendarEvent[] }) {
             </span>
           </span>
           <span className="ml-auto hidden text-muted-foreground/70 sm:inline">
-            날짜를 탭하면 등록 창이 열립니다
+            날짜 빈 공간 = 등록 · 일정 라벨 = 상세
           </span>
         </div>
       </div>
