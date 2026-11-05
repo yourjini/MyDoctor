@@ -47,10 +47,11 @@ export function CalendarAddModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-t-xl bg-card shadow-lg sm:rounded-xl"
+        className="flex max-h-[92vh] w-full max-w-md flex-col rounded-t-xl bg-card shadow-lg sm:max-h-[85vh] sm:rounded-xl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        {/* 헤더: 날짜 + 종류 드롭다운 + 닫기 */}
-        <div className="flex items-center gap-2 border-b p-3 sm:p-4">
+        {/* 헤더: 날짜 + 종류 드롭다운 + 닫기 (sticky — 스크롤해도 유지) */}
+        <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b bg-card p-3 sm:p-4">
           <div className="shrink-0 text-sm font-semibold sm:text-base">
             {formatHeader(date)}
           </div>
@@ -84,7 +85,7 @@ export function CalendarAddModal({
           </button>
         </div>
 
-        <div className="p-4 sm:p-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
           {kind === "visit" ? (
             <VisitQuickForm date={date} />
           ) : (
